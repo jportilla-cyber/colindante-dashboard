@@ -189,7 +189,7 @@ tr:nth-child(even) td{background:#FAFAFA}
 // ════════════════════════════════════════════════════════════
 // CONFIGURACIÓN — reemplaza con tu ID real de Google Sheets
 // ════════════════════════════════════════════════════════════
-const SHEET_ID = '1VvhPWG1vByY0cm5NtDnuJZxbUGCSw730XUi5_8RWbgQ';
+const SHEET_ID = 'TU_SHEET_ID_AQUI';
 const SHEET_MC = 'Master_Clientes';
 const SHEET_AB = 'Abonos';
 const TC = 3.477;
@@ -287,7 +287,7 @@ function renderResumen(){
   const activos = filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
   const ingresos= activos.reduce((a,r)=>a+num(r['Ingresos S/.']),0);
   const xCobrar = activos.reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
-  const valVend = filtrado.filter(r=>str(r['SITUACION'])==='VENDIDO').reduce((a,r)=>a+num(r['VALOR S/']),0);
+  const valVend = filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['VALOR S/']),0);
 
   document.getElementById('resumen-content').innerHTML=`
     <div class="sec-label">Portafolio de departamentos</div>
@@ -310,7 +310,7 @@ function renderResumen(){
 
     <div class="sec-label">Financiero</div>
     <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-l">Valor vendido</div><div class="kpi-v ok" style="font-size:16px">${fmt(valVend)}</div></div>
+      <div class="kpi"><div class="kpi-l">Valor negociado</div><div class="kpi-v ok" style="font-size:16px">${fmt(valVend)}</div><div class="kpi-s">vendido + separado</div></div>
       <div class="kpi"><div class="kpi-l">Ingresos recibidos</div><div class="kpi-v" style="font-size:16px">${fmt(ingresos)}</div></div>
     </div>
     <div class="kpi-grid" style="margin-top:0">
