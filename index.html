@@ -46,46 +46,45 @@ select{height:32px;padding:0 10px;border:1px solid var(--gris-med);border-radius
 .page{display:none;padding:14px 14px 80px}
 .page.active{display:block}
 
-/* ESTADO LOADING/ERROR */
-.estado{padding:40px 20px;text-align:center;color:var(--gris-text)}
-.estado-icon{font-size:32px;margin-bottom:8px}
-.estado-msg{font-size:14px}
-
-/* SECCIÓN */
-.sec-label{font-size:10px;font-weight:600;color:var(--gris-text);letter-spacing:.07em;text-transform:uppercase;margin:16px 0 8px}
-
 /* KPI GRID */
+.sec-label{font-size:10px;font-weight:600;color:var(--gris-text);letter-spacing:.07em;text-transform:uppercase;margin:16px 0 8px}
 .kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:4px}
 .kpi{background:var(--white);border-radius:var(--radius);padding:13px 14px;border:1px solid var(--gris-med)}
 .kpi-l{font-size:11px;color:var(--gris-text);margin-bottom:4px;line-height:1.3}
-.kpi-v{font-size:22px;font-weight:600;color:var(--text);line-height:1}
-.kpi-v.ok{color:var(--verde)}.kpi-v.warn{color:var(--amber)}.kpi-v.danger{color:var(--rojo)}
+.kpi-v{font-size:20px;font-weight:600;color:var(--text);line-height:1}
+.kpi-v.ok{color:var(--verde)}.kpi-v.warn{color:var(--amber)}
 
-/* CLIENTE CARD */
+/* PROGRESO */
+.prog-wrap{background:var(--white);border-radius:var(--radius);padding:14px;border:1px solid var(--gris-med);margin-bottom:4px}
+.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.prog-bg{height:8px;border-radius:4px;background:var(--gris-med);overflow:hidden}
+.prog-fill{height:100%;background:var(--azul-med);transition:width .6s ease}
+
+/* CARTERA / CLIENTES */
 .cliente-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);padding:12px 14px;margin-bottom:8px}
-.cliente-nombre{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3}
-.cliente-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;border-bottom: 1px solid var(--gris-med);padding-bottom: 8px;}
+.cliente-nombre{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.cliente-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;border-bottom:1px solid var(--gris-med);padding-bottom:8px}
 .cliente-unidades{font-size:11px;color:var(--gris-text);margin:8px 0;line-height:1.4}
 .cliente-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .ck{background:var(--gris);border-radius:var(--radius-sm);padding:7px 8px}
 .ck-l{font-size:10px;color:var(--gris-text);margin-bottom:2px}
-.ck-v{font-size:12px;font-weight:600;color:var(--text)}
-.ck-v.warn{color:var(--amber)}
+.ck-v{font-size:12px;font-weight:600}
+
+/* ALERTAS / COBRANZA */
+.alerta-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);overflow:hidden;margin-bottom:8px}
+.alerta-hdr{background:var(--rojo);padding:9px 14px;display:flex;justify-content:space-between;color:#fff;font-weight:600;font-size:12px}
+.alerta-row{display:flex;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--gris-med);align-items:center}
+.alerta-n{font-size:12px;line-height:1.3}
+
+/* PILLS */
+.pill{display:inline-block;font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;text-transform:uppercase}
+.pill-v{background:var(--verde-cl);color:var(--verde)}
+.pill-s{background:var(--amber-cl);color:var(--amber)}
 
 /* CHART */
 .chart-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);padding:14px;margin-bottom:4px}
-.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gris-text)}
-.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
 
-/* PILLS */
-.pill{display:inline-block;font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;letter-spacing:.03em;text-transform:uppercase}
-.pill-v{background:var(--verde-cl);color:var(--verde)}
-.pill-s{background:var(--amber-cl);color:var(--amber)}
-.pill-b{background:var(--rojo-cl);color:var(--rojo)}
-.pill-p{background:var(--gris);color:var(--gris-text)}
-
-.footer{background:var(--white);border-top:1px solid var(--gris-med);padding:10px 16px;text-align:center;font-size:11px;color:var(--gris-text)}
+.footer{padding:20px;text-align:center;font-size:11px;color:var(--gris-text)}
 </style>
 </head>
 <body>
@@ -112,35 +111,21 @@ select{height:32px;padding:0 10px;border:1px solid var(--gris-med);border-radius
 </div>
 
 <div class="filtros">
-  <select id="fil-proyecto" onchange="aplicarFiltros()">
-    <option value="">Todos los proyectos</option>
-  </select>
+  <select id="fil-proyecto" onchange="aplicarFiltros()"><option value="">Todos los proyectos</option></select>
   <select id="fil-situacion" onchange="aplicarFiltros()">
     <option value="">Todas las situaciones</option>
     <option value="VENDIDO">Vendido</option>
     <option value="SEPARADO">Separado</option>
-    <option value="BLOQUEADO">Bloqueado</option>
-    <option value="POR VENDER">Por vender</option>
   </select>
 </div>
 
-<div class="page active" id="page-resumen">
-  <div id="resumen-content"></div>
-</div>
-<div class="page" id="page-proyectos">
-  <div id="proyectos-content"></div>
-</div>
-<div class="page" id="page-graficos">
-  <div id="graficos-content"></div>
-</div>
-<div class="page" id="page-cobranza">
-  <div id="cobranza-content"></div>
-</div>
-<div class="page" id="page-cartera">
-  <div id="cartera-content"></div>
-</div>
+<div class="page active" id="page-resumen"><div id="resumen-content"></div></div>
+<div class="page" id="page-proyectos"><div id="proyectos-content"></div></div>
+<div class="page" id="page-graficos"><div id="graficos-content"></div></div>
+<div class="page" id="page-cobranza"><div id="cobranza-content"></div></div>
+<div class="page" id="page-cartera"><div id="cartera-content"></div></div>
 
-<div class="footer" id="footer-ts">Dashboard Colindante</div>
+<div class="footer" id="footer-ts">© 2024 Colindante Inmobiliaria</div>
 
 <script>
 const SHEET_ID = '1VvhPWG1vByY0cm5NtDnuJZxbUGCSw730XUi5_8RWbgQ';
@@ -152,11 +137,6 @@ const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov'
 const str = v => v ? String(v).trim() : '';
 const num = v => parseFloat(String(v).replace(/,/g,''))||0;
 const fmt = n => n ? 'S/ '+Math.round(n).toLocaleString('es-PE') : 'S/ 0';
-
-function pillHtml(s){
-  const m={'VENDIDO':'pill-v','SEPARADO':'pill-s','BLOQUEADO':'pill-b','POR VENDER':'pill-p'};
-  return `<span class="pill ${m[s]||'pill-p'}">${s}</span>`;
-}
 
 async function fetchSheet(name){
   const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(name)}`;
@@ -180,7 +160,8 @@ async function cargarDatos(){
       proyectos.map(p=>`<option value="${p}">${p}</option>`).join('');
     
     aplicarFiltros();
-    document.getElementById('hdr-fecha').textContent = 'Actualizado: ' + new Date().toLocaleTimeString();
+    const ahora = new Date();
+    document.getElementById('hdr-fecha').textContent = 'Actualizado: ' + ahora.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'});
   } catch(e) { console.error(e); }
   document.getElementById('spin-icon').classList.remove('spinning');
 }
@@ -201,28 +182,52 @@ function renderResumen(){
   const dptos = filtrado.filter(r=>str(r['INMUEBLE']).includes('Departamento'));
   const vendido = dptos.filter(r=>str(r['SITUACION'])==='VENDIDO').length;
   const total = dptos.length;
-  const ingresos = filtrado.reduce((a,r)=>a+num(r['Ingresos S/.']), 0);
-  const xCobrar = filtrado.reduce((a,r)=>a+num(r['Por Pagar S/.']), 0);
+  const pct = total > 0 ? Math.round((vendido/total)*100) : 0;
+  
+  const activos = filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
+  const valTotal = activos.reduce((a,r)=>a+num(r['VALOR S/']), 0);
+  const ingresos = activos.reduce((a,r)=>a+num(r['Ingresos S/.']), 0);
+  const xCobrar = activos.reduce((a,r)=>a+num(r['Por Pagar S/.']), 0);
 
   document.getElementById('resumen-content').innerHTML = `
-    <div class="sec-label">Resumen General</div>
+    <div class="sec-label">Comercial</div>
     <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-l">Ventas (Dptos)</div><div class="kpi-v ok">${vendido}</div></div>
-      <div class="kpi"><div class="kpi-l">Total Dptos</div><div class="kpi-v">${total}</div></div>
-      <div class="kpi"><div class="kpi-l">Cobrado</div><div class="kpi-v ok" style="font-size:16px">${fmt(ingresos)}</div></div>
-      <div class="kpi"><div class="kpi-l">Por Cobrar</div><div class="kpi-v warn" style="font-size:16px">${fmt(xCobrar)}</div></div>
+      <div class="kpi"><div class="kpi-l">Dptos Vendidos</div><div class="kpi-v ok">${vendido}</div></div>
+      <div class="kpi"><div class="kpi-l">Total Stock</div><div class="kpi-v">${total}</div></div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-row"><span style="font-size:12px">% Avance Ventas</span><span style="font-weight:600">${pct}%</span></div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="sec-label">Financiero</div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-l">Valor Negociado</div><div class="kpi-v ok">${fmt(valTotal)}</div></div>
+      <div class="kpi"><div class="kpi-l">Cobrado</div><div class="kpi-v">${fmt(ingresos)}</div></div>
+      <div class="kpi"><div class="kpi-l">Por Cobrar</div><div class="kpi-v warn">${fmt(xCobrar)}</div></div>
+      <div class="kpi"><div class="kpi-l">Clientes Activos</div><div class="kpi-v">${[...new Set(activos.map(r=>str(r['Nombre del Cliente'])))].length}</div></div>
     </div>`;
 }
 
 function renderProyectos(){
-  const proys = [...new Set(filtrado.map(r=>str(r['PROYECTO'])))];
+  const proys = [...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
+  const fp=document.getElementById('fil-proyecto').value;
+  const lista = fp ? [fp] : proys;
+  
   let html = '';
-  proys.forEach(p => {
+  lista.forEach(p => {
     const rows = filtrado.filter(r=>str(r['PROYECTO'])===p);
+    if(rows.length === 0) return;
     const v = rows.filter(r=>str(r['SITUACION'])==='VENDIDO' && str(r['INMUEBLE']).includes('Departamento')).length;
-    html += `<div class="kpi" style="margin-bottom:8px">
-      <div class="kpi-l" style="font-weight:bold; color:var(--azul)">${p}</div>
-      <div class="kpi-v" style="font-size:16px">${v} Dptos. Vendidos</div>
+    const t = rows.filter(r=>str(r['INMUEBLE']).includes('Departamento')).length;
+    const ing = rows.reduce((a,r)=>a+num(r['Ingresos S/.']), 0);
+    const pend = rows.reduce((a,r)=>a+num(r['Por Pagar S/.']), 0);
+
+    html += `<div class="cliente-card">
+      <div class="cliente-nombre" style="color:var(--azul-med)">${p}</div>
+      <div class="kpi-grid">
+        <div class="kpi" style="border:none; padding:0"><div class="ck-l">Avance</div><div class="ck-v">${v} / ${t} dptos</div></div>
+        <div class="kpi" style="border:none; padding:0"><div class="ck-l">Ingresos</div><div class="ck-v ok">${fmt(ing)}</div></div>
+      </div>
     </div>`;
   });
   document.getElementById('proyectos-content').innerHTML = html;
@@ -230,14 +235,13 @@ function renderProyectos(){
 
 function renderGraficos(){
   document.getElementById('graficos-content').innerHTML = `
-    <div class="sec-label">Ventas e Ingresos Mensuales</div>
-    <div class="chart-card">
-      <div class="ch" style="height:250px"><canvas id="ch-mensual"></canvas></div>
-    </div>`;
+    <div class="sec-label">Ventas e Ingresos S/</div>
+    <div class="chart-card"><div style="height:250px"><canvas id="ch-mensual"></canvas></div></div>
+    <div class="sec-label">Composición por Proyecto</div>
+    <div class="chart-card"><div style="height:250px"><canvas id="ch-proy"></canvas></div></div>`;
 
-  const ventasMes = {};
-  const ingresosMes = {};
-  const mesOrder = ['Set-25','Oct-25','Nov-25','Dic-25','Ene-26','Feb-26','Mar-26'];
+  const ventasMes = {}, ingresosMes = {}, proyData = {};
+  const labels = ['Set-24','Oct-24','Nov-24','Dic-24','Ene-25','Feb-25','Mar-25'];
 
   rawMC.forEach(r => {
     const m = num(r['MES DE VENTA']), a = num(r['AÑO DE VENTA']);
@@ -245,40 +249,62 @@ function renderGraficos(){
       const k = MESES[m-1]+'-'+String(a).slice(-2);
       ventasMes[k] = (ventasMes[k]||0) + num(r['VALOR S/']);
     }
+    const p = str(r['PROYECTO']);
+    if(p) proyData[p] = (proyData[p]||0) + 1;
   });
 
   rawAB.forEach(r => {
     const m = num(r['Mes']), a = num(r['Año']);
     if(m && a) {
       const k = MESES[m-1]+'-'+String(a).slice(-2);
-      const monto = num(r['INGRESO S/']) + (num(r['INGRESO US$']) * TC);
-      ingresosMes[k] = (ingresosMes[k]||0) + monto;
+      ingresosMes[k] = (ingresosMes[k]||0) + num(r['INGRESO S/']) + (num(r['INGRESO US$'])*TC);
     }
   });
 
   new Chart(document.getElementById('ch-mensual'), {
     type: 'bar',
     data: {
-      labels: mesOrder,
+      labels,
       datasets: [
-        { label:'Ventas', data: mesOrder.map(k=>ventasMes[k]||0), backgroundColor:'#2F5496' },
-        { label:'Ingresos', data: mesOrder.map(k=>ingresosMes[k]||0), backgroundColor:'#1D9E75' }
+        { label:'Ventas', data: labels.map(l=>ventasMes[l]||0), backgroundColor:'#2F5496' },
+        { label:'Ingresos', data: labels.map(l=>ingresosMes[l]||0), backgroundColor:'#1D9E75' }
       ]
+    },
+    options: { responsive:true, maintainAspectRatio:false }
+  });
+
+  new Chart(document.getElementById('ch-proy'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(proyData),
+      datasets: [{ data: Object.values(proyData), backgroundColor:['#1F3864','#2F5496','#3B6D11','#854F0B'] }]
     },
     options: { responsive:true, maintainAspectRatio:false }
   });
 }
 
 function renderCobranza(){
-  const cobranza = filtrado.filter(r => num(r['Por Pagar S/.']) > 100);
-  let html = '<div class="sec-label">Saldos por Cobrar</div>';
-  cobranza.forEach(r => {
-    html += `<div class="kpi" style="margin-bottom:5px; display:flex; justify-content:space-between">
-      <div style="font-size:12px">${str(r['Nombre del Cliente'])}</div>
-      <div class="warn" style="font-weight:600">${fmt(num(r['Por Pagar S/.']))}</div>
-    </div>`;
+  const porProy = {};
+  filtrado.filter(r=>num(r['Por Pagar S/.']) > 100).forEach(r=>{
+    const p = str(r['PROYECTO']);
+    if(!porProy[p]) porProy[p] = [];
+    porProy[p].push(r);
   });
-  document.getElementById('cobranza-content').innerHTML = html;
+
+  let html = '<div class="sec-label">Deuda Pendiente por Proyecto</div>';
+  Object.entries(porProy).forEach(([p, rows])=>{
+    const total = rows.reduce((a,r)=>a+num(r['Por Pagar S/.']), 0);
+    html += `<div class="alerta-card">
+      <div class="alerta-hdr"><span>${p}</span><span>${fmt(total)}</span></div>`;
+    rows.forEach(r=>{
+      html += `<div class="alerta-row">
+        <div class="alerta-n"><strong>${str(r['Nombre del Cliente'])}</strong><br><small>${str(r['INMUEBLE'])} ${str(r['DPTO'])}</small></div>
+        <div class="warn" style="font-weight:600">${fmt(num(r['Por Pagar S/.']))}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('cobranza-content').innerHTML = html || '<div class="kpi">No hay cobros pendientes</div>';
 }
 
 function renderCartera(){
@@ -288,39 +314,35 @@ function renderCartera(){
   activas.forEach(r => {
     const c = str(r['Nombre del Cliente']);
     if(!agrupado[c]) {
-      agrupado[c] = { 
-        nombre: c, proy: str(r['PROYECTO']), vend: str(r['VENDEDOR']), 
-        sit: str(r['SITUACION']), unds: [], val:0, ing:0, pend:0 
-      };
+      agrupado[c] = { nombre:c, proy:str(r['PROYECTO']), vend:str(r['VENDEDOR']), sit:str(r['SITUACION']), unds:[], val:0, ing:0, pend:0 };
     }
     
-    // CORRECCIÓN: Detectar tipo de inmueble para jalar el número correcto
+    // Lógica corregida para detectar número según tipo de inmueble
     let tipo = str(r['INMUEBLE']);
-    let numero = 'S/N';
+    let numero = '';
+    if(tipo.toLowerCase().includes('departamento')) numero = str(r['DPTO']);
+    else if(tipo.toLowerCase().includes('estacionamiento')) numero = str(r['ESTAC.']);
+    else if(tipo.toLowerCase().includes('depósito') || tipo.toLowerCase().includes('deposito')) numero = str(r['DEPÓSITO']);
     
-    if(tipo.includes('Departamento')) numero = str(r['DPTO']);
-    else if(tipo.includes('Estacionamiento')) numero = str(r['ESTAC.']);
-    else if(tipo.includes('Depósito')) numero = str(r['DEPÓSITO']);
-
-    agrupado[c].unds.push(`${tipo} ${numero}`);
+    agrupado[c].unds.push(`${tipo} ${numero || 'S/N'}`);
     agrupado[c].val += num(r['VALOR S/']);
     agrupado[c].ing += num(r['Ingresos S/.']);
     agrupado[c].pend += num(r['Por Pagar S/.']);
   });
 
   let html = `<div class="sec-label">Cartera de Clientes (${Object.keys(agrupado).length})</div>`;
-  Object.values(agrupado).forEach(c => {
-    html += `
-    <div class="cliente-card">
+  Object.values(agrupado).sort((a,b)=>b.val - a.val).forEach(c => {
+    html += `<div class="cliente-card">
       <div class="cliente-nombre">${c.nombre}</div>
       <div class="cliente-meta">
-        ${pillHtml(c.sit)} <span style="font-size:11px;color:var(--gris-text)">${c.proy} | ${c.vend}</span>
+        <span class="pill ${c.sit==='VENDIDO'?'pill-v':'pill-s'}">${c.sit}</span>
+        <span style="font-size:11px;color:var(--gris-text)">${c.proy} | ${c.vend}</span>
       </div>
       <div class="cliente-unidades"><strong>Unidades:</strong> ${c.unds.join(', ')}</div>
       <div class="cliente-kpis">
-        <div class="ck"><div class="ck-l">Valor</div><div class="ck-v">${fmt(c.val)}</div></div>
-        <div class="ck"><div class="ck-l">Cobrado</div><div class="ck-v ok">${fmt(c.ing)}</div></div>
-        <div class="ck"><div class="ck-l">Pendiente</div><div class="ck-v warn">${fmt(c.pend)}</div></div>
+        <div class="ck"><div class="ck-l">Total</div><div class="ck-v">${fmt(c.val)}</div></div>
+        <div class="ck"><div class="ck-l">Pagado</div><div class="ck-v ok">${fmt(c.ing)}</div></div>
+        <div class="ck"><div class="ck-l">Saldo</div><div class="ck-v warn">${fmt(c.pend)}</div></div>
       </div>
     </div>`;
   });
