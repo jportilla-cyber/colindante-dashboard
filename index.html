@@ -46,45 +46,79 @@ select{height:32px;padding:0 10px;border:1px solid var(--gris-med);border-radius
 .page{display:none;padding:14px 14px 80px}
 .page.active{display:block}
 
-/* KPI GRID */
+/* ESTADO LOADING/ERROR */
+.estado{padding:40px 20px;text-align:center;color:var(--gris-text)}
+.estado-icon{font-size:32px;margin-bottom:8px}
+.estado-msg{font-size:14px}
+
+/* SECCIÓN */
 .sec-label{font-size:10px;font-weight:600;color:var(--gris-text);letter-spacing:.07em;text-transform:uppercase;margin:16px 0 8px}
+
+/* KPI GRID */
 .kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:4px}
 .kpi{background:var(--white);border-radius:var(--radius);padding:13px 14px;border:1px solid var(--gris-med)}
 .kpi-l{font-size:11px;color:var(--gris-text);margin-bottom:4px;line-height:1.3}
-.kpi-v{font-size:20px;font-weight:600;color:var(--text);line-height:1}
-.kpi-v.ok{color:var(--verde)}.kpi-v.warn{color:var(--amber)}
+.kpi-v{font-size:22px;font-weight:600;color:var(--text);line-height:1}
+.kpi-s{font-size:11px;color:var(--gris-text);margin-top:3px}
+.kpi-v.ok{color:var(--verde)}.kpi-v.warn{color:var(--amber)}.kpi-v.danger{color:var(--rojo)}
 
-/* PROGRESO */
+/* BARRA DE PROGRESO */
 .prog-wrap{background:var(--white);border-radius:var(--radius);padding:14px;border:1px solid var(--gris-med);margin-bottom:4px}
 .prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.prog-label{font-size:12px;font-weight:500;color:var(--text2)}
+.prog-pct{font-size:14px;font-weight:600;color:var(--azul-med)}
 .prog-bg{height:8px;border-radius:4px;background:var(--gris-med);overflow:hidden}
-.prog-fill{height:100%;background:var(--azul-med);transition:width .6s ease}
+.prog-fill{height:100%;border-radius:4px;background:var(--azul-med);transition:width .6s ease}
 
-/* CARTERA / CLIENTES */
+/* TABLA */
+.tbl-wrap{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);overflow:hidden;margin-bottom:4px}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--azul);color:#fff;font-weight:600;padding:9px 10px;text-align:left;white-space:nowrap;font-size:11px}
+td{padding:9px 10px;border-top:1px solid var(--gris-med);color:var(--text2);vertical-align:top}
+tr:nth-child(even) td{background:#FAFAFA}
+.proy-name{font-weight:600;font-size:12px;color:var(--text)}
+
+/* PILLS */
+.pill{display:inline-block;font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;letter-spacing:.03em;text-transform:uppercase}
+.pill-v{background:var(--verde-cl);color:var(--verde)}
+.pill-s{background:var(--amber-cl);color:var(--amber)}
+.pill-b{background:var(--rojo-cl);color:var(--rojo)}
+.pill-p{background:var(--gris);color:var(--gris-text)}
+
+/* CHART WRAP */
+.chart-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);padding:14px;margin-bottom:4px}
+.chart-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.chart-sub{font-size:11px;color:var(--gris-text);margin-bottom:10px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gris-text)}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.ch{position:relative;width:100%}
+
+/* ALERTA */
+.alerta-card{background:var(--rojo-cl);border-radius:var(--radius);border:1px solid #F7C1C1;overflow:hidden;margin-bottom:4px}
+.alerta-hdr{background:var(--rojo);padding:9px 14px;display:flex;justify-content:space-between;align-items:center}
+.alerta-hdr-t{font-size:12px;font-weight:600;color:#fff}
+.alerta-hdr-v{font-size:13px;font-weight:700;color:#fff}
+.alerta-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-top:1px solid #F7C1C1}
+.alerta-n{font-size:12px;color:var(--rojo);max-width:65%;line-height:1.3}
+.alerta-m{font-size:12px;font-weight:600;color:var(--rojo);white-space:nowrap}
+
+/* CLIENTE CARD */
 .cliente-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);padding:12px 14px;margin-bottom:8px}
-.cliente-nombre{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
-.cliente-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;border-bottom:1px solid var(--gris-med);padding-bottom:8px}
-.cliente-unidades{font-size:11px;color:var(--gris-text);margin:8px 0;line-height:1.4}
+.cliente-nombre{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3}
+.cliente-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .cliente-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .ck{background:var(--gris);border-radius:var(--radius-sm);padding:7px 8px}
 .ck-l{font-size:10px;color:var(--gris-text);margin-bottom:2px}
-.ck-v{font-size:12px;font-weight:600}
+.ck-v{font-size:12px;font-weight:600;color:var(--text)}
+.ck-v.warn{color:var(--amber)}
 
-/* ALERTAS / COBRANZA */
-.alerta-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);overflow:hidden;margin-bottom:8px}
-.alerta-hdr{background:var(--rojo);padding:9px 14px;display:flex;justify-content:space-between;color:#fff;font-weight:600;font-size:12px}
-.alerta-row{display:flex;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--gris-med);align-items:center}
-.alerta-n{font-size:12px;line-height:1.3}
+/* EMPTY */
+.empty{padding:30px;text-align:center;color:var(--gris-text);font-size:13px}
 
-/* PILLS */
-.pill{display:inline-block;font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;text-transform:uppercase}
-.pill-v{background:var(--verde-cl);color:var(--verde)}
-.pill-s{background:var(--amber-cl);color:var(--amber)}
-
-/* CHART */
-.chart-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);padding:14px;margin-bottom:4px}
-
-.footer{padding:20px;text-align:center;font-size:11px;color:var(--gris-text)}
+/* FOOTER */
+.footer{background:var(--white);border-top:1px solid var(--gris-med);padding:10px 16px;text-align:center;font-size:11px;color:var(--gris-text)}
 </style>
 </head>
 <body>
@@ -95,8 +129,9 @@ select{height:32px;padding:0 10px;border:1px solid var(--gris-med);border-radius
       <div class="hdr-logo">Colindante Inmobiliaria</div>
       <div class="hdr-title">Dashboard Gerencial</div>
       <div class="hdr-fecha" id="hdr-fecha">Cargando...</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:1px" id="refresco-info"></div>
     </div>
-    <button class="btn-refresh" onclick="cargarDatos()">
+    <button class="btn-refresh" onclick="cargarDatos().then(programarRefresco)">
       <span class="spin" id="spin-icon">&#8635;</span> Actualizar
     </button>
   </div>
@@ -111,66 +146,137 @@ select{height:32px;padding:0 10px;border:1px solid var(--gris-med);border-radius
 </div>
 
 <div class="filtros">
-  <select id="fil-proyecto" onchange="aplicarFiltros()"><option value="">Todos los proyectos</option></select>
+  <select id="fil-proyecto" onchange="aplicarFiltros()">
+    <option value="">Todos los proyectos</option>
+  </select>
   <select id="fil-situacion" onchange="aplicarFiltros()">
     <option value="">Todas las situaciones</option>
     <option value="VENDIDO">Vendido</option>
     <option value="SEPARADO">Separado</option>
+    <option value="BLOQUEADO">Bloqueado</option>
+    <option value="POR VENDER">Por vender</option>
+  </select>
+  <select id="fil-inmueble" onchange="aplicarFiltros()">
+    <option value="">Todos los inmuebles</option>
   </select>
 </div>
 
-<div class="page active" id="page-resumen"><div id="resumen-content"></div></div>
-<div class="page" id="page-proyectos"><div id="proyectos-content"></div></div>
-<div class="page" id="page-graficos"><div id="graficos-content"></div></div>
-<div class="page" id="page-cobranza"><div id="cobranza-content"></div></div>
-<div class="page" id="page-cartera"><div id="cartera-content"></div></div>
+<!-- PÁGINA: RESUMEN -->
+<div class="page active" id="page-resumen">
+  <div id="resumen-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+</div>
 
-<div class="footer" id="footer-ts">© 2024 Colindante Inmobiliaria</div>
+<!-- PÁGINA: PROYECTOS -->
+<div class="page" id="page-proyectos">
+  <div id="proyectos-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+</div>
+
+<!-- PÁGINA: GRÁFICOS -->
+<div class="page" id="page-graficos">
+  <div id="graficos-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+</div>
+
+<!-- PÁGINA: COBRANZA -->
+<div class="page" id="page-cobranza">
+  <div id="cobranza-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+</div>
+
+<!-- PÁGINA: CARTERA -->
+<div class="page" id="page-cartera">
+  <div id="cartera-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+</div>
+
+<div class="footer" id="footer-ts">Dashboard Colindante</div>
 
 <script>
+// ════════════════════════════════════════════════════════════
+// CONFIGURACIÓN — reemplaza con tu ID real de Google Sheets
+// ════════════════════════════════════════════════════════════
 const SHEET_ID = '1VvhPWG1vByY0cm5NtDnuJZxbUGCSw730XUi5_8RWbgQ';
+const SHEET_MC = 'Master_Clientes';
+const SHEET_AB = 'Abonos';
 const TC = 3.477;
+
+// ── Estado global ────────────────────────────────────────────
 let rawMC = [], rawAB = [], filtrado = [];
 let chartsCreados = {};
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
 
-const str = v => v ? String(v).trim() : '';
+// ── Utilidades ───────────────────────────────────────────────
+const fmt = n => {
+  if(!n && n!==0) return '—';
+  const abs = Math.abs(n);
+  if(abs>=1e6) return 'S/ '+(n/1e6).toFixed(2)+'M';
+  if(abs>=1e3) return 'S/ '+Math.round(n).toLocaleString('es-PE');
+  return 'S/ '+Math.round(n);
+};
 const num = v => parseFloat(String(v).replace(/,/g,''))||0;
-const fmt = n => n ? 'S/ '+Math.round(n).toLocaleString('es-PE') : 'S/ 0';
+const str = v => v ? String(v).trim() : '';
 
-async function fetchSheet(name){
-  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(name)}`;
+function pillHtml(s){
+  const m={'VENDIDO':'pill-v','SEPARADO':'pill-s','BLOQUEADO':'pill-b','POR VENDER':'pill-p'};
+  return `<span class="pill ${m[s]||'pill-p'}">${s}</span>`;
+}
+
+// ── Fetch Google Sheets ──────────────────────────────────────
+async function fetchSheet(sheetName){
+  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
   const res = await fetch(url);
   const text = await res.text();
   const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+  if(!json.table||!json.table.rows) return [];
   const cols = json.table.cols.map(c=>c.label||'');
   return json.table.rows.map(r=>{
     const obj={};
-    r.c.forEach((cell,i)=>{ obj[cols[i]] = cell ? (cell.v!==null ? cell.v : '') : ''; });
+    r.c.forEach((cell,i)=>{ obj[cols[i]] = cell ? (cell.v!==null&&cell.v!==undefined ? cell.v : '') : ''; });
     return obj;
   });
 }
 
+// ── Cargar datos ─────────────────────────────────────────────
 async function cargarDatos(){
   document.getElementById('spin-icon').classList.add('spinning');
-  try {
-    [rawMC, rawAB] = await Promise.all([fetchSheet('Master_Clientes'), fetchSheet('Abonos')]);
+  try{
+    [rawMC, rawAB] = await Promise.all([fetchSheet(SHEET_MC), fetchSheet(SHEET_AB)]);
+    // Poblar filtros
     const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
-    document.getElementById('fil-proyecto').innerHTML='<option value="">Todos los proyectos</option>'+
+    const inmuebles=[...new Set(rawMC.map(r=>str(r['INMUEBLE'])).filter(Boolean))].sort();
+
+    const selProy=document.getElementById('fil-proyecto');
+    selProy.innerHTML='<option value="">Todos los proyectos</option>'+
       proyectos.map(p=>`<option value="${p}">${p}</option>`).join('');
-    
+
+    const selInm=document.getElementById('fil-inmueble');
+    selInm.innerHTML='<option value="">Todos los inmuebles</option>'+
+      inmuebles.map(i=>`<option value="${i}">${i}</option>`).join('');
+
     aplicarFiltros();
-    const ahora = new Date();
-    document.getElementById('hdr-fecha').textContent = 'Actualizado: ' + ahora.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'});
-  } catch(e) { console.error(e); }
+    const ahora=new Date();
+    document.getElementById('hdr-fecha').textContent=
+      'Actualizado '+ahora.toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'})+
+      ' '+ahora.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('footer-ts').textContent=
+      'Última actualización: '+ahora.toLocaleString('es-PE');
+  }catch(e){
+    console.error(e);
+    ['resumen','proyectos','graficos','cobranza','cartera'].forEach(p=>{
+      document.getElementById(p+'-content').innerHTML=
+        `<div class="estado"><div class="estado-icon">⚠️</div><div class="estado-msg">Error al cargar datos.<br>Verifica que el SHEET_ID sea correcto y el Sheet sea público.</div></div>`;
+    });
+  }
   document.getElementById('spin-icon').classList.remove('spinning');
 }
 
 function aplicarFiltros(){
   const fp=document.getElementById('fil-proyecto').value;
   const fs=document.getElementById('fil-situacion').value;
-  filtrado = rawMC.filter(r => (!fp || str(r['PROYECTO'])===fp) && (!fs || str(r['SITUACION'])===fs));
-  
+  const fi=document.getElementById('fil-inmueble').value;
+  filtrado=rawMC.filter(r=>{
+    if(fp && str(r['PROYECTO'])!==fp) return false;
+    if(fs && str(r['SITUACION'])!==fs) return false;
+    if(fi && str(r['INMUEBLE'])!==fi) return false;
+    return true;
+  });
   renderResumen();
   renderProyectos();
   renderGraficos();
@@ -178,177 +284,391 @@ function aplicarFiltros(){
   renderCartera();
 }
 
+// ════════════════════════════════════════════════════════════
+// PÁGINA 1: RESUMEN
+// ════════════════════════════════════════════════════════════
 function renderResumen(){
-  const dptos = filtrado.filter(r=>str(r['INMUEBLE']).includes('Departamento'));
-  const vendido = dptos.filter(r=>str(r['SITUACION'])==='VENDIDO').length;
-  const total = dptos.length;
-  const pct = total > 0 ? Math.round((vendido/total)*100) : 0;
-  
-  const activos = filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
-  const valTotal = activos.reduce((a,r)=>a+num(r['VALOR S/']), 0);
-  const ingresos = activos.reduce((a,r)=>a+num(r['Ingresos S/.']), 0);
-  const xCobrar = activos.reduce((a,r)=>a+num(r['Por Pagar S/.']), 0);
+  const inmuebles = filtrado;
+  const total   = inmuebles.length;
+  const vendido = inmuebles.filter(r=>str(r['SITUACION'])==='VENDIDO').length;
+  const separado= inmuebles.filter(r=>str(r['SITUACION'])==='SEPARADO').length;
+  const bloq    = inmuebles.filter(r=>str(r['SITUACION'])==='BLOQUEADO').length;
+  const xvender = inmuebles.filter(r=>str(r['SITUACION'])==='POR VENDER').length;
+  const pct     = total>0?Math.round(vendido/total*1000)/10:0;
 
-  document.getElementById('resumen-content').innerHTML = `
-    <div class="sec-label">Comercial</div>
+  const activos = inmuebles.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
+  const ingresos= activos.reduce((a,r)=>a+num(r['Ingresos S/.']),0);
+  const xCobrar = activos.reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
+  const valVend = inmuebles.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['VALOR S/']),0);
+
+  document.getElementById('resumen-content').innerHTML=`
+    <div class="sec-label">Portafolio inmobiliario</div>
     <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-l">Dptos Vendidos</div><div class="kpi-v ok">${vendido}</div></div>
-      <div class="kpi"><div class="kpi-l">Total Stock</div><div class="kpi-v">${total}</div></div>
+      <div class="kpi"><div class="kpi-l">Total inmuebles</div><div class="kpi-v">${total}</div></div>
+      <div class="kpi"><div class="kpi-l">Por vender</div><div class="kpi-v warn">${xvender}</div></div>
+      <div class="kpi"><div class="kpi-l">Vendidos</div><div class="kpi-v ok">${vendido}</div></div>
+      <div class="kpi"><div class="kpi-l">Separados</div><div class="kpi-v">${separado}</div></div>
     </div>
-    <div class="prog-wrap">
-      <div class="prog-row"><span style="font-size:12px">% Avance Ventas</span><span style="font-weight:600">${pct}%</span></div>
-      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div>
+    <div class="prog-wrap" style="margin-top:9px">
+      <div class="prog-row">
+        <span class="prog-label">% Comercializado</span>
+        <span class="prog-pct">${pct}%</span>
+      </div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(pct,1)}%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--gris-text)">
+        <span>Bloqueados: ${bloq}</span><span>Activos (vend+sep): ${vendido+separado}</span>
+      </div>
     </div>
+
     <div class="sec-label">Financiero</div>
     <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-l">Valor Negociado</div><div class="kpi-v ok">${fmt(valTotal)}</div></div>
-      <div class="kpi"><div class="kpi-l">Cobrado</div><div class="kpi-v">${fmt(ingresos)}</div></div>
-      <div class="kpi"><div class="kpi-l">Por Cobrar</div><div class="kpi-v warn">${fmt(xCobrar)}</div></div>
-      <div class="kpi"><div class="kpi-l">Clientes Activos</div><div class="kpi-v">${[...new Set(activos.map(r=>str(r['Nombre del Cliente'])))].length}</div></div>
-    </div>`;
+      <div class="kpi"><div class="kpi-l">Valor negociado</div><div class="kpi-v ok" style="font-size:16px">${fmt(valVend)}</div><div class="kpi-s">vendido + separado</div></div>
+      <div class="kpi"><div class="kpi-l">Ingresos recibidos</div><div class="kpi-v" style="font-size:16px">${fmt(ingresos)}</div></div>
+    </div>
+    <div class="kpi-grid" style="margin-top:0">
+      <div class="kpi"><div class="kpi-l">Por cobrar</div><div class="kpi-v warn" style="font-size:16px">${fmt(xCobrar)}</div></div>
+      <div class="kpi"><div class="kpi-l">Unidades activas</div><div class="kpi-v">${activos.length}</div><div class="kpi-s">vendidos + separados</div></div>
+    </div>
+  `;
 }
 
+// ════════════════════════════════════════════════════════════
+// PÁGINA 2: PROYECTOS
+// ════════════════════════════════════════════════════════════
 function renderProyectos(){
-  const proys = [...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
+  const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
   const fp=document.getElementById('fil-proyecto').value;
-  const lista = fp ? [fp] : proys;
-  
-  let html = '';
-  lista.forEach(p => {
-    const rows = filtrado.filter(r=>str(r['PROYECTO'])===p);
-    if(rows.length === 0) return;
-    const v = rows.filter(r=>str(r['SITUACION'])==='VENDIDO' && str(r['INMUEBLE']).includes('Departamento')).length;
-    const t = rows.filter(r=>str(r['INMUEBLE']).includes('Departamento')).length;
-    const ing = rows.reduce((a,r)=>a+num(r['Ingresos S/.']), 0);
-    const pend = rows.reduce((a,r)=>a+num(r['Por Pagar S/.']), 0);
+  const lista=fp?[fp]:proyectos;
 
-    html += `<div class="cliente-card">
-      <div class="cliente-nombre" style="color:var(--azul-med)">${p}</div>
+  let html='';
+  lista.forEach(p=>{
+    const dptos=filtrado.filter(r=>str(r['PROYECTO'])===p);
+    if(!dptos.length) return;
+    const v=dptos.filter(r=>str(r['SITUACION'])==='VENDIDO').length;
+    const s=dptos.filter(r=>str(r['SITUACION'])==='SEPARADO').length;
+    const b=dptos.filter(r=>str(r['SITUACION'])==='BLOQUEADO').length;
+    const pv=dptos.filter(r=>str(r['SITUACION'])==='POR VENDER').length;
+    const t=dptos.length;
+    const pct=t>0?Math.round(v/t*1000)/10:0;
+    const ingresos=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Ingresos S/.']),0);
+    const xCobrar=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
+
+    html+=`
+    <div style="margin-bottom:4px">
+      <div class="sec-label">${p}</div>
       <div class="kpi-grid">
-        <div class="kpi" style="border:none; padding:0"><div class="ck-l">Avance</div><div class="ck-v">${v} / ${t} dptos</div></div>
-        <div class="kpi" style="border:none; padding:0"><div class="ck-l">Ingresos</div><div class="ck-v ok">${fmt(ing)}</div></div>
+        <div class="kpi"><div class="kpi-l">Total inmuebles</div><div class="kpi-v">${t}</div></div>
+        <div class="kpi"><div class="kpi-l">% Comercializado</div><div class="kpi-v ${pct>=10?'ok':pct>=5?'warn':'danger'}" style="font-size:18px">${pct}%</div></div>
+      </div>
+      <div class="kpi-grid" style="margin-top:0">
+        <div class="kpi"><div class="kpi-l">Vendidos</div><div class="kpi-v ok">${v}</div></div>
+        <div class="kpi"><div class="kpi-l">Separados</div><div class="kpi-v warn">${s}</div></div>
+      </div>
+      <div class="kpi-grid" style="margin-top:0">
+        <div class="kpi"><div class="kpi-l">Por vender</div><div class="kpi-v">${pv}</div></div>
+        <div class="kpi"><div class="kpi-l">Bloqueados</div><div class="kpi-v ${b>0?'danger':''}">${b}</div></div>
+      </div>
+      <div class="prog-wrap" style="margin-top:0;margin-bottom:0">
+        <div class="prog-row">
+          <span class="prog-label" style="font-size:11px">Avance comercial</span>
+          <span class="prog-pct">${pct}%</span>
+        </div>
+        <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(pct,0.5)}%"></div></div>
+      </div>
+      <div class="kpi-grid" style="margin-top:9px;margin-bottom:16px">
+        <div class="kpi"><div class="kpi-l">Ingresos</div><div class="kpi-v ok" style="font-size:14px">${fmt(ingresos)}</div></div>
+        <div class="kpi"><div class="kpi-l">Por cobrar</div><div class="kpi-v warn" style="font-size:14px">${fmt(xCobrar)}</div></div>
       </div>
     </div>`;
   });
-  document.getElementById('proyectos-content').innerHTML = html;
+  document.getElementById('proyectos-content').innerHTML=html||'<div class="empty">Sin datos para los filtros seleccionados</div>';
 }
 
+// ════════════════════════════════════════════════════════════
+// PÁGINA 3: GRÁFICOS
+// ════════════════════════════════════════════════════════════
 function renderGraficos(){
-  document.getElementById('graficos-content').innerHTML = `
-    <div class="sec-label">Ventas e Ingresos S/</div>
-    <div class="chart-card"><div style="height:250px"><canvas id="ch-mensual"></canvas></div></div>
-    <div class="sec-label">Composición por Proyecto</div>
-    <div class="chart-card"><div style="height:250px"><canvas id="ch-proy"></canvas></div></div>`;
+  const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
+  const fp=document.getElementById('fil-proyecto').value;
+  const lista=fp?[fp]:proyectos;
 
-  const ventasMes = {}, ingresosMes = {}, proyData = {};
-  const labels = ['Set-24','Oct-24','Nov-24','Dic-24','Ene-25','Feb-25','Mar-25'];
+  // Datos para gráfico de barras: unidades por estado por proyecto
+  const estados=['VENDIDO','SEPARADO','BLOQUEADO','POR VENDER'];
+  const barData=lista.map(p=>{
+    const dptos=filtrado.filter(r=>str(r['PROYECTO'])===p);
+    return{
+      proyecto:p,
+      vendido:dptos.filter(r=>str(r['SITUACION'])==='VENDIDO').length,
+      separado:dptos.filter(r=>str(r['SITUACION'])==='SEPARADO').length,
+      bloqueado:dptos.filter(r=>str(r['SITUACION'])==='BLOQUEADO').length,
+      xvender:dptos.filter(r=>str(r['SITUACION'])==='POR VENDER').length,
+    };
+  }).filter(d=>d.vendido+d.separado+d.xvender>0);
 
-  rawMC.forEach(r => {
-    const m = num(r['MES DE VENTA']), a = num(r['AÑO DE VENTA']);
-    if(m && a) {
-      const k = MESES[m-1]+'-'+String(a).slice(-2);
-      ventasMes[k] = (ventasMes[k]||0) + num(r['VALOR S/']);
+  // Datos para gráfico de ventas mensuales
+  const ventasMes={};
+  filtrado.filter(r=>str(r['SITUACION'])==='VENDIDO').forEach(r=>{
+    const mes=num(r['MES DE VENTA']);
+    const anio=num(r['AÑO DE VENTA']);
+    if(mes>=1&&mes<=12&&anio>1990){
+      const key=MESES[mes-1]+'-'+String(anio).slice(-2);
+      ventasMes[key]=(ventasMes[key]||0)+num(r['VALOR S/']);
     }
-    const p = str(r['PROYECTO']);
-    if(p) proyData[p] = (proyData[p]||0) + 1;
   });
+  const mesOrder=['Set-25','Oct-25','Nov-25','Dic-25','Ene-26','Feb-26','Mar-26','Abr-26','May-26'];
+  const vmKeys=mesOrder.filter(k=>ventasMes[k]);
 
-  rawAB.forEach(r => {
-    const m = num(r['Mes']), a = num(r['Año']);
-    if(m && a) {
-      const k = MESES[m-1]+'-'+String(a).slice(-2);
-      ingresosMes[k] = (ingresosMes[k]||0) + num(r['INGRESO S/']) + (num(r['INGRESO US$'])*TC);
+  // Datos ingresos mensuales (de Abonos)
+  const ingresosMes={};
+  rawAB.forEach(r=>{
+    const proy=str(r['PROYECTO']);
+    if(fp&&proy!==fp) return;
+    const mes=num(r['Mes'])||num(r['Mes2']);
+    const anio=num(r['Año'])||num(r['Año3']);
+    const monto=(num(r['INGRESO S/'])||0)+(num(r['INGRESO US$'])||0)*(num(r['TC'])||TC);
+    if(mes>=1&&mes<=12&&anio>1990&&monto>0){
+      const key=MESES[mes-1]+'-'+String(anio).slice(-2);
+      ingresosMes[key]=(ingresosMes[key]||0)+monto;
     }
   });
+  const imKeys=[...new Set([...vmKeys,...Object.keys(ingresosMes)])].filter(k=>mesOrder.includes(k)).sort((a,b)=>mesOrder.indexOf(a)-mesOrder.indexOf(b));
 
-  new Chart(document.getElementById('ch-mensual'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label:'Ventas', data: labels.map(l=>ventasMes[l]||0), backgroundColor:'#2F5496' },
-        { label:'Ingresos', data: labels.map(l=>ingresosMes[l]||0), backgroundColor:'#1D9E75' }
-      ]
-    },
-    options: { responsive:true, maintainAspectRatio:false }
+  document.getElementById('graficos-content').innerHTML=`
+    <div class="sec-label">Inmuebles por estado · por proyecto</div>
+    <div class="chart-card">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#3B6D11"></span>Vendido</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#BA7517"></span>Separado</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#A32D2D"></span>Bloqueado</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#888780"></span>Por vender</span>
+      </div>
+      <div class="ch" style="height:${Math.max(barData.length*50+60,160)}px">
+        <canvas id="ch-estados" role="img" aria-label="Unidades por estado y proyecto">Unidades por proyecto</canvas>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:14px">Ventas e ingresos mensuales S/</div>
+    <div class="chart-card">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#2F5496"></span>Ventas</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#1D9E75"></span>Ingresos</span>
+      </div>
+      <div class="ch" style="height:200px">
+        <canvas id="ch-ventas" role="img" aria-label="Ventas e ingresos mensuales">Ventas mensuales</canvas>
+      </div>
+    </div>
+  `;
+
+  // Destruir charts previos
+  ['ch-estados','ch-ventas'].forEach(id=>{
+    if(chartsCreados[id]){chartsCreados[id].destroy();delete chartsCreados[id];}
   });
 
-  new Chart(document.getElementById('ch-proy'), {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(proyData),
-      datasets: [{ data: Object.values(proyData), backgroundColor:['#1F3864','#2F5496','#3B6D11','#854F0B'] }]
-    },
-    options: { responsive:true, maintainAspectRatio:false }
-  });
+  const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc=isDark?'rgba(255,255,255,.08)':'rgba(0,0,0,.05)';
+  const tc=isDark?'#aaa':'#888';
+
+  // Chart barras horizontales por proyecto
+  if(barData.length){
+    const labels=barData.map(d=>d.proyecto.length>12?d.proyecto.slice(0,12)+'…':d.proyecto);
+    chartsCreados['ch-estados']=new Chart(document.getElementById('ch-estados'),{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[
+          {label:'Vendido',data:barData.map(d=>d.vendido),backgroundColor:'#3B6D11',borderRadius:3,borderSkipped:false},
+          {label:'Separado',data:barData.map(d=>d.separado),backgroundColor:'#BA7517',borderRadius:3,borderSkipped:false},
+          {label:'Bloqueado',data:barData.map(d=>d.bloqueado),backgroundColor:'#A32D2D',borderRadius:3,borderSkipped:false},
+          {label:'Por vender',data:barData.map(d=>d.xvender),backgroundColor:'#B4B2A9',borderRadius:3,borderSkipped:false},
+        ]
+      },
+      options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.x}}},
+        scales:{
+          x:{stacked:true,grid:{color:gc},ticks:{color:tc,font:{size:10}}},
+          y:{stacked:true,grid:{display:false},ticks:{color:tc,font:{size:11}}}
+        }
+      }
+    });
+  }
+
+  // Chart ventas/ingresos mensuales
+  if(imKeys.length){
+    chartsCreados['ch-ventas']=new Chart(document.getElementById('ch-ventas'),{
+      type:'bar',
+      data:{
+        labels:imKeys,
+        datasets:[
+          {label:'Ventas',data:imKeys.map(k=>Math.round(ventasMes[k]||0)),backgroundColor:'#2F5496',borderRadius:3,borderSkipped:false},
+          {label:'Ingresos',data:imKeys.map(k=>Math.round(ingresosMes[k]||0)),backgroundColor:'#1D9E75',borderRadius:3,borderSkipped:false},
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'S/ '+c.parsed.y.toLocaleString('es-PE')}}},
+        scales:{
+          x:{grid:{display:false},ticks:{color:tc,font:{size:10},autoSkip:false,maxRotation:45}},
+          y:{grid:{color:gc},ticks:{color:tc,font:{size:10},callback:v=>'S/'+(v/1000).toFixed(0)+'k'}}
+        }
+      }
+    });
+  }
 }
 
+// ════════════════════════════════════════════════════════════
+// PÁGINA 4: COBRANZA
+// ════════════════════════════════════════════════════════════
 function renderCobranza(){
-  const porProy = {};
-  filtrado.filter(r=>num(r['Por Pagar S/.']) > 100).forEach(r=>{
-    const p = str(r['PROYECTO']);
-    if(!porProy[p]) porProy[p] = [];
+  const activos=filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))&&num(r['Por Pagar S/.'])>0);
+
+  // Agrupar por proyecto para alertas
+  const porProy={};
+  activos.forEach(r=>{
+    const p=str(r['PROYECTO']);
+    if(!porProy[p]) porProy[p]=[];
     porProy[p].push(r);
   });
 
-  let html = '<div class="sec-label">Deuda Pendiente por Proyecto</div>';
-  Object.entries(porProy).forEach(([p, rows])=>{
-    const total = rows.reduce((a,r)=>a+num(r['Por Pagar S/.']), 0);
-    html += `<div class="alerta-card">
-      <div class="alerta-hdr"><span>${p}</span><span>${fmt(total)}</span></div>`;
-    rows.forEach(r=>{
-      html += `<div class="alerta-row">
-        <div class="alerta-n"><strong>${str(r['Nombre del Cliente'])}</strong><br><small>${str(r['INMUEBLE'])} ${str(r['DPTO'])}</small></div>
-        <div class="warn" style="font-weight:600">${fmt(num(r['Por Pagar S/.']))}</div>
+  const totalXCobrar=activos.reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
+  const totalIngresos=filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Ingresos S/.']),0);
+
+  let html=`
+    <div class="kpi-grid" style="margin-top:4px">
+      <div class="kpi"><div class="kpi-l">Total ingresos</div><div class="kpi-v ok" style="font-size:15px">${fmt(totalIngresos)}</div></div>
+      <div class="kpi"><div class="kpi-l">Total por cobrar</div><div class="kpi-v warn" style="font-size:15px">${fmt(totalXCobrar)}</div></div>
+    </div>
+    <div class="sec-label" style="margin-top:14px">Saldo pendiente por cliente</div>`;
+
+  Object.entries(porProy).forEach(([proy,rows])=>{
+    const totalProy=rows.reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
+    html+=`<div class="alerta-card" style="margin-bottom:10px">
+      <div class="alerta-hdr">
+        <span class="alerta-hdr-t">${proy}</span>
+        <span class="alerta-hdr-v">${fmt(totalProy)}</span>
+      </div>`;
+    rows.sort((a,b)=>num(b['Por Pagar S/.'])-num(a['Por Pagar S/.'])).forEach(r=>{
+      const nombre=str(r['Nombre del Cliente'])||'Sin nombre';
+      const dpto=str(r['DPTO'])||str(r['TOWER'])||str(r['INMUEBLE'])||'';
+      const sit=str(r['SITUACION']);
+      html+=`<div class="alerta-row">
+        <div class="alerta-n">${nombre.length>35?nombre.slice(0,35)+'…':nombre}${dpto?' · '+dpto:''}<br><span style="font-size:10px;color:var(--gris-text)">${pillHtml(sit)}</span></div>
+        <div class="alerta-m">${fmt(num(r['Por Pagar S/.']))}</div>
       </div>`;
     });
-    html += `</div>`;
+    html+=`</div>`;
   });
-  document.getElementById('cobranza-content').innerHTML = html || '<div class="kpi">No hay cobros pendientes</div>';
+
+  if(!Object.keys(porProy).length) html+='<div class="empty">Sin saldos pendientes</div>';
+  document.getElementById('cobranza-content').innerHTML=html;
 }
 
+// ════════════════════════════════════════════════════════════
+// PÁGINA 5: CARTERA
+// ════════════════════════════════════════════════════════════
 function renderCartera(){
-  const activas = filtrado.filter(r => str(r['Nombre del Cliente']) && ['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
-  const agrupado = {};
+  const activos = filtrado.filter(r =>
+    ['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])) &&
+    str(r['Nombre del Cliente'])
+  );
 
-  activas.forEach(r => {
-    const c = str(r['Nombre del Cliente']);
-    if(!agrupado[c]) {
-      agrupado[c] = { nombre:c, proy:str(r['PROYECTO']), vend:str(r['VENDEDOR']), sit:str(r['SITUACION']), unds:[], val:0, ing:0, pend:0 };
+  if(!activos.length){
+    document.getElementById('cartera-content').innerHTML =
+      '<div class="empty">Sin clientes activos para los filtros seleccionados</div>';
+    return;
+  }
+
+  // ── AGRUPAR POR CLIENTE ─────────────────────────
+  const clientes = {};
+
+  activos.forEach(r => {
+    const nombre = str(r['Nombre del Cliente']);
+
+    if(!clientes[nombre]){
+      clientes[nombre] = {
+        nombre,
+        proyecto: str(r['PROYECTO']),
+        situacion: str(r['SITUACION']),
+        vendedor: str(r['VENDEDOR']),
+        dptos: new Set(),
+        ests: new Set(),
+        deps: new Set(),
+        valor: 0,
+        ingresos: 0,
+        porCobrar: 0
+      };
     }
-    
-    // Lógica corregida para detectar número según tipo de inmueble
-    let tipo = str(r['INMUEBLE']);
-    let numero = '';
-    if(tipo.toLowerCase().includes('departamento')) numero = str(r['DPTO']);
-    else if(tipo.toLowerCase().includes('estacionamiento')) numero = str(r['ESTAC.']);
-    else if(tipo.toLowerCase().includes('depósito') || tipo.toLowerCase().includes('deposito')) numero = str(r['DEPÓSITO']);
-    
-    agrupado[c].unds.push(`${tipo} ${numero || 'S/N'}`);
-    agrupado[c].val += num(r['VALOR S/']);
-    agrupado[c].ing += num(r['Ingresos S/.']);
-    agrupado[c].pend += num(r['Por Pagar S/.']);
+
+    // Unidades
+    if(str(r['DPTO'])) clientes[nombre].dptos.add(str(r['DPTO']));
+    if(str(r['EST'])) clientes[nombre].ests.add(str(r['EST']));
+    if(str(r['DEP'])) clientes[nombre].deps.add(str(r['DEP']));
+
+    // KPIs acumulados
+    clientes[nombre].valor += num(r['VALOR S/']);
+    clientes[nombre].ingresos += num(r['Ingresos S/.']);
+    clientes[nombre].porCobrar += num(r['Por Pagar S/.']);
   });
 
-  let html = `<div class="sec-label">Cartera de Clientes (${Object.keys(agrupado).length})</div>`;
-  Object.values(agrupado).sort((a,b)=>b.val - a.val).forEach(c => {
-    html += `<div class="cliente-card">
-      <div class="cliente-nombre">${c.nombre}</div>
-      <div class="cliente-meta">
-        <span class="pill ${c.sit==='VENDIDO'?'pill-v':'pill-s'}">${c.sit}</span>
-        <span style="font-size:11px;color:var(--gris-text)">${c.proy} | ${c.vend}</span>
+  const listaClientes = Object.values(clientes)
+    .sort((a,b)=>b.valor - a.valor);
+
+  const vendidos = listaClientes.filter(c=>c.situacion==='VENDIDO').length;
+  const separados = listaClientes.filter(c=>c.situacion==='SEPARADO').length;
+
+  let html = `
+    <div class="kpi-grid" style="margin-top:4px">
+      <div class="kpi"><div class="kpi-l">Contratos firmados</div><div class="kpi-v ok">${vendidos}</div></div>
+      <div class="kpi"><div class="kpi-l">En proceso</div><div class="kpi-v warn">${separados}</div></div>
+    </div>
+    <div class="sec-label" style="margin-top:14px">Clientes activos (${listaClientes.length})</div>
+  `;
+
+  // ── FORMATEAR TEXTO DE UNIDADES ─────────────────────────
+  function formatearUnidades(c){
+    const partes = [];
+
+    if(c.dptos.size){
+      partes.push(`Dpto ${[...c.dptos].join(', ')}`);
+    }
+
+    if(c.ests.size){
+      const arr = [...c.ests];
+      partes.push(`Est ${arr.length>1 ? arr.slice(0,-1).join(', ') + ' y ' + arr.slice(-1) : arr[0]}`);
+    }
+
+    if(c.deps.size){
+      const arr = [...c.deps];
+      partes.push(`Dep ${arr.length>1 ? arr.slice(0,-1).join(', ') + ' y ' + arr.slice(-1) : arr[0]}`);
+    }
+
+    return partes.join(' · ');
+  }
+
+  // ── RENDER ─────────────────────────
+  listaClientes.forEach(c=>{
+    html += `
+      <div class="cliente-card">
+        <div class="cliente-nombre">${c.nombre}</div>
+        <div class="cliente-meta">
+          ${pillHtml(c.situacion)}
+          <span style="font-size:11px;color:var(--gris-text)">${c.proyecto}</span>
+          ${formatearUnidades(c) ? `<span style="font-size:11px;color:var(--gris-text)">${formatearUnidades(c)}</span>` : ''}
+          ${c.vendedor ? `<span style="font-size:11px;color:var(--gris-text)">${c.vendedor}</span>` : ''}
+        </div>
+        <div class="cliente-kpis">
+          <div class="ck"><div class="ck-l">Valor</div><div class="ck-v">${fmt(c.valor)}</div></div>
+          <div class="ck"><div class="ck-l">Cobrado</div><div class="ck-v ok">${fmt(c.ingresos)}</div></div>
+          <div class="ck"><div class="ck-l">Pendiente</div><div class="ck-v warn">${fmt(c.porCobrar)}</div></div>
+        </div>
       </div>
-      <div class="cliente-unidades"><strong>Unidades:</strong> ${c.unds.join(', ')}</div>
-      <div class="cliente-kpis">
-        <div class="ck"><div class="ck-l">Total</div><div class="ck-v">${fmt(c.val)}</div></div>
-        <div class="ck"><div class="ck-l">Pagado</div><div class="ck-v ok">${fmt(c.ing)}</div></div>
-        <div class="ck"><div class="ck-l">Saldo</div><div class="ck-v warn">${fmt(c.pend)}</div></div>
-      </div>
-    </div>`;
+    `;
   });
+
   document.getElementById('cartera-content').innerHTML = html;
 }
 
+// ── Navegación ───────────────────────────────────────────────
 function mostrarPagina(id, btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -356,7 +676,113 @@ function mostrarPagina(id, btn){
   btn.classList.add('active');
 }
 
-cargarDatos();
+// ── Auto-refresco ─────────────────────────────────────────────
+const INTERVALO_MS = 60 * 60 * 1000; // 1 hora
+let timerRefresco = null;
+let ultimaCarga = null;
+
+function programarRefresco() {
+  if (timerRefresco) clearTimeout(timerRefresco);
+  timerRefresco = setTimeout(async () => {
+    await cargarDatos();
+    programarRefresco();
+  }, INTERVALO_MS);
+  actualizarIndicador();
+}
+
+function actualizarIndicador() {
+  if (!ultimaCarga) return;
+  const diff = Math.round((Date.now() - ultimaCarga) / 60000);
+  const prox = 60 - diff;
+  const el = document.getElementById('refresco-info');
+  if (el) el.textContent = diff === 0
+    ? 'Datos actualizados ahora · próximo refresco en 60 min'
+    : `Datos de hace ${diff} min · próximo refresco en ${prox} min`;
+}
+
+// Refrescar cuando el usuario vuelve a la pestaña/app (ej: saca el celular del bolsillo)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    const diffMin = ultimaCarga ? (Date.now() - ultimaCarga) / 60000 : 999;
+    if (diffMin >= 5) { // solo si pasaron más de 5 min desde la última carga
+      cargarDatos().then(programarRefresco);
+    } else {
+      actualizarIndicador();
+    }
+  }
+});
+
+// Sobrescribir cargarDatos para registrar timestamp
+const _cargarDatosOriginal = cargarDatos;
+cargarDatos = async function() {
+  await _cargarDatosOriginal();
+  ultimaCarga = Date.now();
+  actualizarIndicador();
+};
+
+// ── Arranque ─────────────────────────────────────────────────
+cargarDatos().then(programarRefresco);
+</script>
+</body>
+</html>
+
+  document.getElementById('cartera-content').innerHTML=html;
+}
+
+// ── Navegación ───────────────────────────────────────────────
+function mostrarPagina(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Auto-refresco ─────────────────────────────────────────────
+const INTERVALO_MS = 60 * 60 * 1000; // 1 hora
+let timerRefresco = null;
+let ultimaCarga = null;
+
+function programarRefresco() {
+  if (timerRefresco) clearTimeout(timerRefresco);
+  timerRefresco = setTimeout(async () => {
+    await cargarDatos();
+    programarRefresco();
+  }, INTERVALO_MS);
+  actualizarIndicador();
+}
+
+function actualizarIndicador() {
+  if (!ultimaCarga) return;
+  const diff = Math.round((Date.now() - ultimaCarga) / 60000);
+  const prox = 60 - diff;
+  const el = document.getElementById('refresco-info');
+  if (el) el.textContent = diff === 0
+    ? 'Datos actualizados ahora · próximo refresco en 60 min'
+    : `Datos de hace ${diff} min · próximo refresco en ${prox} min`;
+}
+
+// Refrescar cuando el usuario vuelve a la pestaña/app (ej: saca el celular del bolsillo)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    const diffMin = ultimaCarga ? (Date.now() - ultimaCarga) / 60000 : 999;
+    if (diffMin >= 5) { // solo si pasaron más de 5 min desde la última carga
+      cargarDatos().then(programarRefresco);
+    } else {
+      actualizarIndicador();
+    }
+  }
+});
+
+// Sobrescribir cargarDatos para registrar timestamp
+const _cargarDatosOriginal = cargarDatos;
+cargarDatos = async function() {
+  await _cargarDatosOriginal();
+  ultimaCarga = Date.now();
+  actualizarIndicador();
+};
+
+// ── Arranque ─────────────────────────────────────────────────
+cargarDatos().then(programarRefresco);
 </script>
 </body>
 </html>
