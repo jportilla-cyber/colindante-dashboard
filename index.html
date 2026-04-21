@@ -59,43 +59,24 @@ select{height:32px;padding:0 10px;border:1px solid var(--gris-med);border-radius
 .kpi{background:var(--white);border-radius:var(--radius);padding:13px 14px;border:1px solid var(--gris-med)}
 .kpi-l{font-size:11px;color:var(--gris-text);margin-bottom:4px;line-height:1.3}
 .kpi-v{font-size:22px;font-weight:600;color:var(--text);line-height:1}
-.kpi-s{font-size:11px;color:var(--gris-text);margin-top:3px}
 .kpi-v.ok{color:var(--verde)}.kpi-v.warn{color:var(--amber)}.kpi-v.danger{color:var(--rojo)}
-
-/* BARRA DE PROGRESO */
-.prog-wrap{background:var(--white);border-radius:var(--radius);padding:14px;border:1px solid var(--gris-med);margin-bottom:4px}
-.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.prog-label{font-size:12px;font-weight:500;color:var(--text2)}
-.prog-pct{font-size:14px;font-weight:600;color:var(--azul-med)}
-.prog-bg{height:8px;border-radius:4px;background:var(--gris-med);overflow:hidden}
-.prog-fill{height:100%;border-radius:4px;background:var(--azul-med);transition:width .6s ease}
 
 /* CLIENTE CARD */
 .cliente-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);padding:12px 14px;margin-bottom:8px}
 .cliente-nombre{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3}
 .cliente-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;border-bottom: 1px solid var(--gris-med);padding-bottom: 8px;}
-.cliente-unidades{font-size:11px;color:var(--gris-text);margin-bottom:10px;line-height:1.4}
+.cliente-unidades{font-size:11px;color:var(--gris-text);margin:8px 0;line-height:1.4}
 .cliente-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .ck{background:var(--gris);border-radius:var(--radius-sm);padding:7px 8px}
 .ck-l{font-size:10px;color:var(--gris-text);margin-bottom:2px}
 .ck-v{font-size:12px;font-weight:600;color:var(--text)}
 .ck-v.warn{color:var(--amber)}
 
-/* CHART WRAP */
+/* CHART */
 .chart-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);padding:14px;margin-bottom:4px}
 .legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
 .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gris-text)}
 .legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
-.ch{position:relative;width:100%}
-
-/* ALERTA */
-.alerta-card{background:var(--rojo-cl);border-radius:var(--radius);border:1px solid #F7C1C1;overflow:hidden;margin-bottom:4px}
-.alerta-hdr{background:var(--rojo);padding:9px 14px;display:flex;justify-content:space-between;align-items:center}
-.alerta-hdr-t{font-size:12px;font-weight:600;color:#fff}
-.alerta-hdr-v{font-size:13px;font-weight:700;color:#fff}
-.alerta-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-top:1px solid #F7C1C1}
-.alerta-n{font-size:12px;color:var(--rojo);max-width:65%;line-height:1.3}
-.alerta-m{font-size:12px;font-weight:600;color:var(--rojo);white-space:nowrap}
 
 /* PILLS */
 .pill{display:inline-block;font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;letter-spacing:.03em;text-transform:uppercase}
@@ -104,7 +85,6 @@ select{height:32px;padding:0 10px;border:1px solid var(--gris-med);border-radius
 .pill-b{background:var(--rojo-cl);color:var(--rojo)}
 .pill-p{background:var(--gris);color:var(--gris-text)}
 
-.empty{padding:30px;text-align:center;color:var(--gris-text);font-size:13px}
 .footer{background:var(--white);border-top:1px solid var(--gris-med);padding:10px 16px;text-align:center;font-size:11px;color:var(--gris-text)}
 </style>
 </head>
@@ -116,9 +96,8 @@ select{height:32px;padding:0 10px;border:1px solid var(--gris-med);border-radius
       <div class="hdr-logo">Colindante Inmobiliaria</div>
       <div class="hdr-title">Dashboard Gerencial</div>
       <div class="hdr-fecha" id="hdr-fecha">Cargando...</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:1px" id="refresco-info"></div>
     </div>
-    <button class="btn-refresh" onclick="cargarDatos().then(programarRefresco)">
+    <button class="btn-refresh" onclick="cargarDatos()">
       <span class="spin" id="spin-icon">&#8635;</span> Actualizar
     </button>
   </div>
@@ -136,9 +115,6 @@ select{height:32px;padding:0 10px;border:1px solid var(--gris-med);border-radius
   <select id="fil-proyecto" onchange="aplicarFiltros()">
     <option value="">Todos los proyectos</option>
   </select>
-  <select id="fil-inmueble" onchange="aplicarFiltros()">
-    <option value="">Todos los inmuebles</option>
-  </select>
   <select id="fil-situacion" onchange="aplicarFiltros()">
     <option value="">Todas las situaciones</option>
     <option value="VENDIDO">Vendido</option>
@@ -149,110 +125,70 @@ select{height:32px;padding:0 10px;border:1px solid var(--gris-med);border-radius
 </div>
 
 <div class="page active" id="page-resumen">
-  <div id="resumen-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+  <div id="resumen-content"></div>
 </div>
-
 <div class="page" id="page-proyectos">
-  <div id="proyectos-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+  <div id="proyectos-content"></div>
 </div>
-
 <div class="page" id="page-graficos">
-  <div id="graficos-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+  <div id="graficos-content"></div>
 </div>
-
 <div class="page" id="page-cobranza">
-  <div id="cobranza-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+  <div id="cobranza-content"></div>
 </div>
-
 <div class="page" id="page-cartera">
-  <div id="cartera-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+  <div id="cartera-content"></div>
 </div>
 
 <div class="footer" id="footer-ts">Dashboard Colindante</div>
 
 <script>
-// ════════════════════════════════════════════════════════════
-// CONFIGURACIÓN
-// ════════════════════════════════════════════════════════════
 const SHEET_ID = '1VvhPWG1vByY0cm5NtDnuJZxbUGCSw730XUi5_8RWbgQ';
-const SHEET_MC = 'Master_Clientes';
-const SHEET_AB = 'Abonos';
 const TC = 3.477;
-
 let rawMC = [], rawAB = [], filtrado = [];
 let chartsCreados = {};
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
 
-// ── Utilidades ───────────────────────────────────────────────
-const fmt = n => {
-  if(!n && n!==0) return '—';
-  const abs = Math.abs(n);
-  if(abs>=1e6) return 'S/ '+(n/1e6).toFixed(2)+'M';
-  if(abs>=1e3) return 'S/ '+Math.round(n).toLocaleString('es-PE');
-  return 'S/ '+Math.round(n);
-};
-const num = v => parseFloat(String(v).replace(/,/g,''))||0;
 const str = v => v ? String(v).trim() : '';
+const num = v => parseFloat(String(v).replace(/,/g,''))||0;
+const fmt = n => n ? 'S/ '+Math.round(n).toLocaleString('es-PE') : 'S/ 0';
 
 function pillHtml(s){
   const m={'VENDIDO':'pill-v','SEPARADO':'pill-s','BLOQUEADO':'pill-b','POR VENDER':'pill-p'};
   return `<span class="pill ${m[s]||'pill-p'}">${s}</span>`;
 }
 
-// ── Fetch Google Sheets ──────────────────────────────────────
-async function fetchSheet(sheetName){
-  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+async function fetchSheet(name){
+  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(name)}`;
   const res = await fetch(url);
   const text = await res.text();
   const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
-  if(!json.table||!json.table.rows) return [];
   const cols = json.table.cols.map(c=>c.label||'');
   return json.table.rows.map(r=>{
     const obj={};
-    r.c.forEach((cell,i)=>{ obj[cols[i]] = cell ? (cell.v!==null&&cell.v!==undefined ? cell.v : '') : ''; });
+    r.c.forEach((cell,i)=>{ obj[cols[i]] = cell ? (cell.v!==null ? cell.v : '') : ''; });
     return obj;
   });
 }
 
-// ── Cargar datos ─────────────────────────────────────────────
 async function cargarDatos(){
   document.getElementById('spin-icon').classList.add('spinning');
-  try{
-    [rawMC, rawAB] = await Promise.all([fetchSheet(SHEET_MC), fetchSheet(SHEET_AB)]);
-    
+  try {
+    [rawMC, rawAB] = await Promise.all([fetchSheet('Master_Clientes'), fetchSheet('Abonos')]);
     const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
-    const selProy=document.getElementById('fil-proyecto');
-    selProy.innerHTML='<option value="">Todos los proyectos</option>'+
+    document.getElementById('fil-proyecto').innerHTML='<option value="">Todos los proyectos</option>'+
       proyectos.map(p=>`<option value="${p}">${p}</option>`).join('');
-
-    const inmuebles=[...new Set(rawMC.map(r=>str(r['INMUEBLE'])).filter(Boolean))].sort();
-    const selInm=document.getElementById('fil-inmueble');
-    selInm.innerHTML='<option value="">Todos los inmuebles</option>'+
-      inmuebles.map(i=>`<option value="${i}">${i}</option>`).join('');
-
-    aplicarFiltros();
     
-    const ahora=new Date();
-    document.getElementById('hdr-fecha').textContent=
-      'Actualizado '+ahora.toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'})+
-      ' '+ahora.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){
-    console.error(e);
-  }
+    aplicarFiltros();
+    document.getElementById('hdr-fecha').textContent = 'Actualizado: ' + new Date().toLocaleTimeString();
+  } catch(e) { console.error(e); }
   document.getElementById('spin-icon').classList.remove('spinning');
 }
 
 function aplicarFiltros(){
   const fp=document.getElementById('fil-proyecto').value;
-  const fi=document.getElementById('fil-inmueble').value;
   const fs=document.getElementById('fil-situacion').value;
-  
-  filtrado=rawMC.filter(r=>{
-    if(fp && str(r['PROYECTO'])!==fp) return false;
-    if(fi && str(r['INMUEBLE'])!==fi) return false;
-    if(fs && str(r['SITUACION'])!==fs) return false;
-    return true;
-  });
+  filtrado = rawMC.filter(r => (!fp || str(r['PROYECTO'])===fp) && (!fs || str(r['SITUACION'])===fs));
   
   renderResumen();
   renderProyectos();
@@ -261,236 +197,133 @@ function aplicarFiltros(){
   renderCartera();
 }
 
-// ════════════════════════════════════════════════════════════
-// PÁGINA 1: RESUMEN
-// ════════════════════════════════════════════════════════════
 function renderResumen(){
-  const unidades = filtrado; 
-  const total   = unidades.length;
-  const vendido = unidades.filter(r=>str(r['SITUACION'])==='VENDIDO').length;
-  const separado= unidades.filter(r=>str(r['SITUACION'])==='SEPARADO').length;
-  const bloq    = unidades.filter(r=>str(r['SITUACION'])==='BLOQUEADO').length;
-  const xvender = unidades.filter(r=>str(r['SITUACION'])==='POR VENDER').length;
-  const pct     = total>0?Math.round(vendido/total*1000)/10:0;
+  const dptos = filtrado.filter(r=>str(r['INMUEBLE']).includes('Departamento'));
+  const vendido = dptos.filter(r=>str(r['SITUACION'])==='VENDIDO').length;
+  const total = dptos.length;
+  const ingresos = filtrado.reduce((a,r)=>a+num(r['Ingresos S/.']), 0);
+  const xCobrar = filtrado.reduce((a,r)=>a+num(r['Por Pagar S/.']), 0);
 
-  const activos = filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
-  const ingresos= activos.reduce((a,r)=>a+num(r['Ingresos S/.']),0);
-  const xCobrar = activos.reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
-  const valVend = activos.reduce((a,r)=>a+num(r['VALOR S/']),0);
-
-  document.getElementById('resumen-content').innerHTML=`
-    <div class="sec-label">Portafolio de Inmuebles</div>
+  document.getElementById('resumen-content').innerHTML = `
+    <div class="sec-label">Resumen General</div>
     <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-l">Total unidades</div><div class="kpi-v">${total}</div></div>
-      <div class="kpi"><div class="kpi-l">Por vender</div><div class="kpi-v warn">${xvender}</div></div>
-      <div class="kpi"><div class="kpi-l">Vendidos</div><div class="kpi-v ok">${vendido}</div></div>
-      <div class="kpi"><div class="kpi-l">Separados</div><div class="kpi-v">${separado}</div></div>
-    </div>
-    <div class="prog-wrap" style="margin-top:9px">
-      <div class="prog-row">
-        <span class="prog-label">% Comercializado</span>
-        <span class="prog-pct">${pct}%</span>
-      </div>
-      <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(pct,1)}%"></div></div>
-    </div>
-    <div class="sec-label">Financiero</div>
-    <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-l">Valor negociado</div><div class="kpi-v ok" style="font-size:16px">${fmt(valVend)}</div></div>
-      <div class="kpi"><div class="kpi-l">Ingresos recibidos</div><div class="kpi-v" style="font-size:16px">${fmt(ingresos)}</div></div>
-    </div>
-    <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-l">Por cobrar</div><div class="kpi-v warn" style="font-size:16px">${fmt(xCobrar)}</div></div>
-      <div class="kpi"><div class="kpi-l">Clientes activos</div><div class="kpi-v">${activos.length}</div></div>
-    </div>
-  `;
+      <div class="kpi"><div class="kpi-l">Ventas (Dptos)</div><div class="kpi-v ok">${vendido}</div></div>
+      <div class="kpi"><div class="kpi-l">Total Dptos</div><div class="kpi-v">${total}</div></div>
+      <div class="kpi"><div class="kpi-l">Cobrado</div><div class="kpi-v ok" style="font-size:16px">${fmt(ingresos)}</div></div>
+      <div class="kpi"><div class="kpi-l">Por Cobrar</div><div class="kpi-v warn" style="font-size:16px">${fmt(xCobrar)}</div></div>
+    </div>`;
 }
 
-// ════════════════════════════════════════════════════════════
-// PÁGINA 2: PROYECTOS
-// ════════════════════════════════════════════════════════════
 function renderProyectos(){
-  const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
-  const fp=document.getElementById('fil-proyecto').value;
-  const lista=fp?[fp]:proyectos;
-
-  let html='';
-  lista.forEach(p=>{
-    const unidades=filtrado.filter(r=>str(r['PROYECTO'])===p);
-    if(!unidades.length) return;
-    const v=unidades.filter(r=>str(r['SITUACION'])==='VENDIDO').length;
-    const t=unidades.length;
-    const pct=t>0?Math.round(v/t*1000)/10:0;
-    const ingresos=unidades.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Ingresos S/.']),0);
-    const xCobrar=unidades.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
-
-    html+=`
-    <div style="margin-bottom:4px">
-      <div class="sec-label">${p}</div>
-      <div class="kpi-grid">
-        <div class="kpi"><div class="kpi-l">Unidades</div><div class="kpi-v">${t}</div></div>
-        <div class="kpi"><div class="kpi-l">% Vendido</div><div class="kpi-v ok" style="font-size:18px">${pct}%</div></div>
-      </div>
-      <div class="kpi-grid" style="margin-top:0">
-        <div class="kpi"><div class="kpi-l">Ingresos</div><div class="kpi-v ok" style="font-size:14px">${fmt(ingresos)}</div></div>
-        <div class="kpi"><div class="kpi-l">Por cobrar</div><div class="kpi-v warn" style="font-size:14px">${fmt(xCobrar)}</div></div>
-      </div>
+  const proys = [...new Set(filtrado.map(r=>str(r['PROYECTO'])))];
+  let html = '';
+  proys.forEach(p => {
+    const rows = filtrado.filter(r=>str(r['PROYECTO'])===p);
+    const v = rows.filter(r=>str(r['SITUACION'])==='VENDIDO' && str(r['INMUEBLE']).includes('Departamento')).length;
+    html += `<div class="kpi" style="margin-bottom:8px">
+      <div class="kpi-l" style="font-weight:bold; color:var(--azul)">${p}</div>
+      <div class="kpi-v" style="font-size:16px">${v} Dptos. Vendidos</div>
     </div>`;
   });
-  document.getElementById('proyectos-content').innerHTML=html||'<div class="empty">Sin datos</div>';
+  document.getElementById('proyectos-content').innerHTML = html;
 }
 
-// ════════════════════════════════════════════════════════════
-// PÁGINA 3: GRÁFICOS
-// ════════════════════════════════════════════════════════════
 function renderGraficos(){
-  const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
-  const fp=document.getElementById('fil-proyecto').value;
-  const lista=fp?[fp]:proyectos;
-
-  const barData=lista.map(p=>{
-    const unidades=filtrado.filter(r=>str(r['PROYECTO'])===p);
-    return{
-      proyecto:p,
-      vendido:unidades.filter(r=>str(r['SITUACION'])==='VENDIDO').length,
-      separado:unidades.filter(r=>str(r['SITUACION'])==='SEPARADO').length,
-      xvender:unidades.filter(r=>str(r['SITUACION'])==='POR VENDER').length,
-    };
-  }).filter(d=>d.vendido+d.separado+d.xvender>0);
-
-  document.getElementById('graficos-content').innerHTML=`
-    <div class="sec-label">Unidades por estado</div>
+  document.getElementById('graficos-content').innerHTML = `
+    <div class="sec-label">Ventas e Ingresos Mensuales</div>
     <div class="chart-card">
-      <div class="legend">
-        <span class="legend-item"><span class="legend-dot" style="background:#3B6D11"></span>Vendido</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#BA7517"></span>Separado</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#B4B2A9"></span>Por vender</span>
-      </div>
-      <div class="ch" style="height:${barData.length*40+60}px">
-        <canvas id="ch-estados"></canvas>
-      </div>
-    </div>
-  `;
+      <div class="ch" style="height:250px"><canvas id="ch-mensual"></canvas></div>
+    </div>`;
 
-  if(chartsCreados['ch-estados']) chartsCreados['ch-estados'].destroy();
+  const ventasMes = {};
+  const ingresosMes = {};
+  const mesOrder = ['Set-25','Oct-25','Nov-25','Dic-25','Ene-26','Feb-26','Mar-26'];
 
-  chartsCreados['ch-estados']=new Chart(document.getElementById('ch-estados'),{
-    type:'bar',
-    data:{
-      labels: barData.map(d=>d.proyecto),
-      datasets:[
-        {label:'Vendido',data:barData.map(d=>d.vendido),backgroundColor:'#3B6D11'},
-        {label:'Separado',data:barData.map(d=>d.separado),backgroundColor:'#BA7517'},
-        {label:'Por vender',data:barData.map(d=>d.xvender),backgroundColor:'#B4B2A9'},
-      ]
-    },
-    options:{
-      indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      scales:{x:{stacked:true},y:{stacked:true}}
+  rawMC.forEach(r => {
+    const m = num(r['MES DE VENTA']), a = num(r['AÑO DE VENTA']);
+    if(m && a) {
+      const k = MESES[m-1]+'-'+String(a).slice(-2);
+      ventasMes[k] = (ventasMes[k]||0) + num(r['VALOR S/']);
     }
   });
+
+  rawAB.forEach(r => {
+    const m = num(r['Mes']), a = num(r['Año']);
+    if(m && a) {
+      const k = MESES[m-1]+'-'+String(a).slice(-2);
+      const monto = num(r['INGRESO S/']) + (num(r['INGRESO US$']) * TC);
+      ingresosMes[k] = (ingresosMes[k]||0) + monto;
+    }
+  });
+
+  new Chart(document.getElementById('ch-mensual'), {
+    type: 'bar',
+    data: {
+      labels: mesOrder,
+      datasets: [
+        { label:'Ventas', data: mesOrder.map(k=>ventasMes[k]||0), backgroundColor:'#2F5496' },
+        { label:'Ingresos', data: mesOrder.map(k=>ingresosMes[k]||0), backgroundColor:'#1D9E75' }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false }
+  });
 }
 
-// ════════════════════════════════════════════════════════════
-// PÁGINA 4: COBRANZA
-// ════════════════════════════════════════════════════════════
 function renderCobranza(){
-  const activos=filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))&&num(r['Por Pagar S/.'])>0);
-  const porProy={};
-  activos.forEach(r=>{
-    const p=str(r['PROYECTO']);
-    if(!porProy[p]) porProy[p]=[];
-    porProy[p].push(r);
+  const cobranza = filtrado.filter(r => num(r['Por Pagar S/.']) > 100);
+  let html = '<div class="sec-label">Saldos por Cobrar</div>';
+  cobranza.forEach(r => {
+    html += `<div class="kpi" style="margin-bottom:5px; display:flex; justify-content:space-between">
+      <div style="font-size:12px">${str(r['Nombre del Cliente'])}</div>
+      <div class="warn" style="font-weight:600">${fmt(num(r['Por Pagar S/.']))}</div>
+    </div>`;
   });
-
-  let html='<div class="sec-label">Saldos pendientes</div>';
-  Object.entries(porProy).forEach(([proy,rows])=>{
-    html+=`<div class="alerta-card">
-      <div class="alerta-hdr"><span class="alerta-hdr-t">${proy}</span></div>`;
-    rows.forEach(r=>{
-      html+=`<div class="alerta-row">
-        <div class="alerta-n">${str(r['Nombre del Cliente'])}<br><span style="font-size:10px">${str(r['INMUEBLE'])} ${str(r['DPTO'])}</span></div>
-        <div class="alerta-m">${fmt(num(r['Por Pagar S/.']))}</div>
-      </div>`;
-    });
-    html+=`</div>`;
-  });
-  document.getElementById('cobranza-content').innerHTML=html;
+  document.getElementById('cobranza-content').innerHTML = html;
 }
 
-// ════════════════════════════════════════════════════════════
-// PÁGINA 5: CARTERA (MODIFICADA PARA AGRUPAR POR CLIENTE)
-// ════════════════════════════════════════════════════════════
 function renderCartera(){
-  // 1. Filtrar solo filas con cliente y situación activa
-  const filasActivas = filtrado.filter(r => 
-    str(r['Nombre del Cliente']) && ['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))
-  );
+  const activas = filtrado.filter(r => str(r['Nombre del Cliente']) && ['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
+  const agrupado = {};
 
-  if(!filasActivas.length){
-    document.getElementById('cartera-content').innerHTML='<div class="empty">Sin clientes activos</div>';
-    return;
-  }
-
-  // 2. Agrupar por Cliente
-  const carteraAgrupada = {};
-  filasActivas.forEach(r => {
-    const cliente = str(r['Nombre del Cliente']);
-    if(!carteraAgrupada[cliente]){
-      carteraAgrupada[cliente] = {
-        nombre: cliente,
-        vendedor: str(r['VENDEDOR']),
-        proyecto: str(r['PROYECTO']),
-        unidades: [],
-        totalValor: 0,
-        totalCobrado: 0,
-        totalPendiente: 0,
-        situacionPrincipal: str(r['SITUACION'])
+  activas.forEach(r => {
+    const c = str(r['Nombre del Cliente']);
+    if(!agrupado[c]) {
+      agrupado[c] = { 
+        nombre: c, proy: str(r['PROYECTO']), vend: str(r['VENDEDOR']), 
+        sit: str(r['SITUACION']), unds: [], val:0, ing:0, pend:0 
       };
     }
     
-    // Agregar detalle de la unidad
-    carteraAgrupada[cliente].unidades.push({
-      tipo: str(r['INMUEBLE']),
-      num: str(r['DPTO']) || str(r['ESTAC.']) || str(r['DEPÓSITO']) || 'S/N'
-    });
-
-    // Sumar financieros
-    carteraAgrupada[cliente].totalValor += num(r['VALOR S/']);
-    carteraAgrupada[cliente].totalCobrado += num(r['Ingresos S/.']);
-    carteraAgrupada[cliente].totalPendiente += num(r['Por Pagar S/.']);
+    // CORRECCIÓN: Detectar tipo de inmueble para jalar el número correcto
+    let tipo = str(r['INMUEBLE']);
+    let numero = 'S/N';
     
-    // Si alguna unidad es 'VENDIDO', esa manda en el Pill
-    if(str(r['SITUACION']) === 'VENDIDO') carteraAgrupada[cliente].situacionPrincipal = 'VENDIDO';
+    if(tipo.includes('Departamento')) numero = str(r['DPTO']);
+    else if(tipo.includes('Estacionamiento')) numero = str(r['ESTAC.']);
+    else if(tipo.includes('Depósito')) numero = str(r['DEPÓSITO']);
+
+    agrupado[c].unds.push(`${tipo} ${numero}`);
+    agrupado[c].val += num(r['VALOR S/']);
+    agrupado[c].ing += num(r['Ingresos S/.']);
+    agrupado[c].pend += num(r['Por Pagar S/.']);
   });
 
-  // 3. Renderizar tarjetas
-  let html = `<div class="sec-label">Clientes Activos (${Object.keys(carteraAgrupada).length})</div>`;
-  
-  Object.values(carteraAgrupada)
-    .sort((a,b) => b.totalValor - a.totalValor) // Ordenar por valor total
-    .forEach(c => {
-      // Formatear texto de unidades: "Dpto 101, Cochera 5, Deposito 2"
-      const listaUnd = c.unidades.map(u => `${u.tipo} ${u.num}`).join(', ');
-
-      html += `
-      <div class="cliente-card">
-        <div class="cliente-nombre">${c.nombre}</div>
-        <div class="cliente-meta">
-          ${pillHtml(c.situacionPrincipal)}
-          <span style="font-size:11px;color:var(--gris-text)">${c.proyecto}</span>
-          <span style="font-size:11px;color:var(--gris-text)">| ${c.vendedor}</span>
-        </div>
-        <div class="cliente-unidades">
-          <strong>Unidades:</strong> ${listaUnd}
-        </div>
-        <div class="cliente-kpis">
-          <div class="ck"><div class="ck-l">Valor Total</div><div class="ck-v">${fmt(c.totalValor)}</div></div>
-          <div class="ck"><div class="ck-l">Cobrado</div><div class="ck-v ok">${fmt(c.totalCobrado)}</div></div>
-          <div class="ck"><div class="ck-l">Pendiente</div><div class="ck-v warn">${fmt(c.totalPendiente)}</div></div>
-        </div>
-      </div>`;
-    });
-
+  let html = `<div class="sec-label">Cartera de Clientes (${Object.keys(agrupado).length})</div>`;
+  Object.values(agrupado).forEach(c => {
+    html += `
+    <div class="cliente-card">
+      <div class="cliente-nombre">${c.nombre}</div>
+      <div class="cliente-meta">
+        ${pillHtml(c.sit)} <span style="font-size:11px;color:var(--gris-text)">${c.proy} | ${c.vend}</span>
+      </div>
+      <div class="cliente-unidades"><strong>Unidades:</strong> ${c.unds.join(', ')}</div>
+      <div class="cliente-kpis">
+        <div class="ck"><div class="ck-l">Valor</div><div class="ck-v">${fmt(c.val)}</div></div>
+        <div class="ck"><div class="ck-l">Cobrado</div><div class="ck-v ok">${fmt(c.ing)}</div></div>
+        <div class="ck"><div class="ck-l">Pendiente</div><div class="ck-v warn">${fmt(c.pend)}</div></div>
+      </div>
+    </div>`;
+  });
   document.getElementById('cartera-content').innerHTML = html;
 }
 
@@ -501,11 +334,7 @@ function mostrarPagina(id, btn){
   btn.classList.add('active');
 }
 
-async function programarRefresco() {
-  setTimeout(() => cargarDatos().then(programarRefresco), 60000 * 60);
-}
-
-cargarDatos().then(programarRefresco);
+cargarDatos();
 </script>
 </body>
 </html>
