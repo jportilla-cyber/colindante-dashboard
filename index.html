@@ -106,6 +106,7 @@ tr:nth-child(even) td{background:#FAFAFA}
 
 /* CLIENTE CARD */
 .cliente-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gris-med);padding:12px 14px;margin-bottom:8px}
+.cliente-card.por-pagar{background:#FFF5E6;border:1px solid #F7DCBE}
 .cliente-nombre{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3}
 .cliente-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .cliente-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
@@ -178,6 +179,7 @@ tr:nth-child(even) td{background:#FAFAFA}
   <button class="tab" onclick="mostrarPagina('proyectos',this)">Proyectos</button>
   <button class="tab" onclick="mostrarPagina('graficos',this)">Gráficos</button>
   <button class="tab" onclick="mostrarPagina('cobranza',this)">Cobranza</button>
+  <button class="tab" onclick="mostrarPagina('cronograma',this)">Cronograma de Cuotas</button>
   <button class="tab" onclick="mostrarPagina('cartera',this)">Cartera</button>
 </div>
 
@@ -219,9 +221,14 @@ tr:nth-child(even) td{background:#FAFAFA}
   <div id="graficos-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
 </div>
 
-<!-- PÁGINA: COBRANZA -->
+<!-- PÁGINA: COBRANZA (NUEVA) -->
 <div class="page" id="page-cobranza">
   <div id="cobranza-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+</div>
+
+<!-- PÁGINA: CRONOGRAMA DE CUOTAS -->
+<div class="page" id="page-cronograma">
+  <div id="cronograma-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
 </div>
 
 <!-- PÁGINA: CARTERA -->
@@ -304,7 +311,7 @@ async function cargarDatos(){
       'Última actualización: '+ahora.toLocaleString('es-PE');
   }catch(e){
     console.error(e);
-    ['resumen','proyectos','graficos','cobranza','cartera'].forEach(p=>{
+    ['resumen','proyectos','graficos','cobranza','cronograma','cartera'].forEach(p=>{
       document.getElementById(p+'-content').innerHTML=
         `<div class="estado"><div class="estado-icon">⚠️</div><div class="estado-msg">Error al cargar datos.<br>Verifica que el SHEET_ID sea correcto y el Sheet sea público.</div></div>`;
     });
@@ -330,7 +337,8 @@ function aplicarFiltros(){
   renderResumen();
   renderProyectos();
   renderGraficos();
-  renderCobranza();
+  renderCobranzaNueva();
+  renderCronograma();
   renderCartera();
 }
 
@@ -338,7 +346,7 @@ function setCuotaFiltro(valor, btn){
   filCuota = valor;
   document.querySelectorAll('.btn-cuota').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  renderCobranza();
+  renderCronograma();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -574,9 +582,130 @@ function renderGraficos(){
 }
 
 // ════════════════════════════════════════════════════════════
-// PÁGINA 4: COBRANZA
+// PÁGINA 4: COBRANZA (NUEVA)
 // ════════════════════════════════════════════════════════════
-function renderCobranza(){
+function renderCobranzaNueva(){
+  const activos = filtrado.filter(r =>
+    ['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])) &&
+    str(r['Nombre del Cliente'])
+  );
+
+  // Totales de cobranza desde Master
+  const totalCobrado = activos.reduce((a,r)=>a+num(r['Ingresos  S/.']),0);
+  const totalPorCobrar = activos.reduce((a,r)=>a+num(r['Por Pagar  S/.']),0);
+  const totalValor = activos.reduce((a,r)=>a+num(r['VALOR S/']),0);
+  const pctCobrado = totalValor > 0 ? Math.round((totalCobrado / totalValor) * 1000) / 10 : 0;
+  const pctPendiente = 100 - pctCobrado;
+
+  let html = `
+    <div class="sec-label">Resumen de cobranza</div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-l">Total cobrado</div><div class="kpi-v ok" style="font-size:15px">${fmt(totalCobrado)}</div></div>
+      <div class="kpi"><div class="kpi-l">Total por cobrar</div><div class="kpi-v warn" style="font-size:15px">${fmt(totalPorCobrar)}</div></div>
+    </div>
+    
+    <div class="prog-wrap" style="margin-top:9px">
+      <div class="prog-row">
+        <span class="prog-label">Progreso de cobranza</span>
+        <span class="prog-pct">${pctCobrado}%</span>
+      </div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(pctCobrado,1)}%; background: linear-gradient(90deg, #3B6D11 0%, #1D9E75 100%);"></div></div>
+    </div>
+
+    <div class="sec-label" style="margin-top:14px">Tipo de crédito</div>
+  `;
+
+  // Agrupar por tipo de crédito
+  const tiposCredito = {};
+  activos.forEach(r => {
+    const tipo = str(r['TIPO CREDITO']) || 'Sin especificar';
+    if (!tiposCredito[tipo]) {
+      tiposCredito[tipo] = { cobrado: 0, porCobrar: 0, contar: 0 };
+    }
+    tiposCredito[tipo].cobrado += num(r['Ingresos  S/.']);
+    tiposCredito[tipo].porCobrar += num(r['Por Pagar  S/.']);
+    tiposCredito[tipo].contar += 1;
+  });
+
+  Object.entries(tiposCredito).forEach(([tipo, datos]) => {
+    const total = datos.cobrado + datos.porCobrar;
+    const pct = total > 0 ? Math.round((datos.cobrado / total) * 1000) / 10 : 0;
+    html += `
+      <div class="cliente-card">
+        <div style="margin-bottom:8px">
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px">${tipo}</div>
+          <div style="font-size:11px;color:var(--gris-text);margin-bottom:8px">${datos.contar} cliente${datos.contar!==1?'s':''}</div>
+          <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(pct,0.5)}%; background:#2F5496;"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <div class="ck"><div class="ck-l">Cobrado</div><div class="ck-v ok">${fmt(datos.cobrado)}</div></div>
+          <div class="ck"><div class="ck-l">Por cobrar</div><div class="ck-v warn">${fmt(datos.porCobrar)}</div></div>
+        </div>
+      </div>
+    `;
+  });
+
+  // Listado de clientes por pagar
+  html += `<div class="sec-label" style="margin-top:14px">Clientes por pagar</div>`;
+
+  // Agrupar por cliente
+  const clientes = {};
+  activos.forEach(r => {
+    const nombre = str(r['Nombre del Cliente']);
+    if (!clientes[nombre]) {
+      clientes[nombre] = {
+        nombre,
+        proyecto: str(r['PROYECTO']),
+        dptos: new Set(),
+        ests: new Set(),
+        deps: new Set(),
+        cobrado: 0,
+        porCobrar: 0
+      };
+    }
+    if(str(r['DPTO'])) clientes[nombre].dptos.add(str(r['DPTO']));
+    if(str(r['EST'])) clientes[nombre].ests.add(str(r['EST']));
+    if(str(r['DEP'])) clientes[nombre].deps.add(str(r['DEP']));
+    clientes[nombre].cobrado += num(r['Ingresos  S/.']);
+    clientes[nombre].porCobrar += num(r['Por Pagar  S/.']);
+  });
+
+  const listaClientes = Object.values(clientes)
+    .filter(c => c.porCobrar > 0)
+    .sort((a,b) => b.porCobrar - a.porCobrar);
+
+  if(listaClientes.length === 0){
+    html += `<div class="empty">Todos los clientes están al día</div>`;
+  } else {
+    listaClientes.forEach(c => {
+      const unidades = [];
+      if(c.dptos.size) unidades.push(`Dpto ${[...c.dptos].join(', ')}`);
+      if(c.ests.size) unidades.push(`Est ${[...c.ests].join(', ')}`);
+      if(c.deps.size) unidades.push(`Dep ${[...c.deps].join(', ')}`);
+      const textUnidades = unidades.join(' · ');
+
+      html += `
+        <div class="cliente-card por-pagar">
+          <div class="cliente-nombre">${c.nombre}</div>
+          <div style="font-size:11px;color:var(--gris-text);margin-bottom:8px">
+            ${c.proyecto}${textUnidades ? ' · ' + textUnidades : ''}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="ck"><div class="ck-l">Pagado</div><div class="ck-v ok">${fmt(c.cobrado)}</div></div>
+            <div class="ck"><div class="ck-l">Por pagar</div><div class="ck-v warn">${fmt(c.porCobrar)}</div></div>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  document.getElementById('cobranza-content').innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════════
+// PÁGINA 4b: CRONOGRAMA DE CUOTAS (antes era COBRANZA)
+// ════════════════════════════════════════════════════════════
+function renderCronograma(){
   const hoy = new Date();
   hoy.setHours(0,0,0,0);
   const fp = document.getElementById('fil-proyecto').value;
@@ -703,7 +832,7 @@ function renderCobranza(){
     html += `</div></div>`;
   });
 
-  document.getElementById('cobranza-content').innerHTML = html;
+  document.getElementById('cronograma-content').innerHTML = html;
 }
 
 function parseFechaCron(s){
@@ -826,7 +955,7 @@ function mostrarPagina(id, btn){
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
   const filCuotaWrap = document.getElementById('fil-cuota-wrap');
-  if(filCuotaWrap) filCuotaWrap.style.display = id==='cobranza' ? 'flex' : 'none';
+  if(filCuotaWrap) filCuotaWrap.style.display = id==='cronograma' ? 'flex' : 'none';
 }
 
 // ── Auto-refresco ─────────────────────────────────────────────
