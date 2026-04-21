@@ -119,6 +119,42 @@ tr:nth-child(even) td{background:#FAFAFA}
 
 /* FOOTER */
 .footer{background:var(--white);border-top:1px solid var(--gris-med);padding:10px 16px;text-align:center;font-size:11px;color:var(--gris-text)}
+
+/* CRONOGRAMA COBRANZA */
+.cron-grupo{margin-bottom:14px}
+.cron-hdr{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:var(--radius) var(--radius) 0 0;font-size:12px;font-weight:600}
+.cron-hdr.vencida{background:var(--rojo);color:#fff}
+.cron-hdr.por-vencer{background:#854F0B;color:#fff}
+.cron-hdr.pendiente{background:var(--azul-med);color:#fff}
+.cron-hdr-badge{background:rgba(255,255,255,.25);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:auto;white-space:nowrap}
+.cron-body{border:1px solid var(--gris-med);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden;background:var(--white)}
+.cron-row{padding:10px 14px;border-top:1px solid var(--gris-med);display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start}
+.cron-row:first-child{border-top:none}
+.cron-row.vencida{background:#FFF8F8}
+.cron-row.por-vencer{background:#FFFBF0}
+.cron-row.pendiente{background:var(--white)}
+.cron-cliente{font-size:12px;font-weight:600;color:var(--text);line-height:1.3}
+.cron-meta{font-size:11px;color:var(--gris-text);margin-top:3px;line-height:1.4}
+.cron-right{text-align:right;flex-shrink:0}
+.cron-monto{font-size:13px;font-weight:600}
+.cron-monto.vencida{color:var(--rojo)}
+.cron-monto.por-vencer{color:var(--amber)}
+.cron-monto.pendiente{color:var(--azul-med)}
+.cron-dias{font-size:10px;margin-top:2px;white-space:nowrap}
+.cron-dias.vencida{color:var(--rojo)}
+.cron-dias.por-vencer{color:var(--amber)}
+.cron-dias.pendiente{color:var(--gris-text)}
+.fil-cuota-wrap{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;background:var(--white);border-bottom:1px solid var(--gris-med);scrollbar-width:none}
+.fil-cuota-wrap::-webkit-scrollbar{display:none}
+.btn-cuota{flex-shrink:0;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .15s}
+.btn-cuota.all{background:var(--gris);color:var(--gris-text);border-color:var(--gris-med)}
+.btn-cuota.all.active{background:var(--azul-med);color:#fff;border-color:var(--azul-med)}
+.btn-cuota.vencida{background:var(--rojo-cl);color:var(--rojo);border-color:#F7C1C1}
+.btn-cuota.vencida.active{background:var(--rojo);color:#fff;border-color:var(--rojo)}
+.btn-cuota.pv{background:var(--amber-cl);color:var(--amber);border-color:#FAC775}
+.btn-cuota.pv.active{background:var(--amber);color:#fff;border-color:var(--amber)}
+.btn-cuota.pendiente{background:var(--azul-cl);color:var(--azul-med);border-color:#B5D4F4}
+.btn-cuota.pendiente.active{background:var(--azul-med);color:#fff;border-color:var(--azul-med)}
 </style>
 </head>
 <body>
@@ -161,6 +197,13 @@ tr:nth-child(even) td{background:#FAFAFA}
   </select>
 </div>
 
+<div class="fil-cuota-wrap" id="fil-cuota-wrap" style="display:none">
+  <button class="btn-cuota all active" onclick="setCuotaFiltro('',this)">Todas</button>
+  <button class="btn-cuota vencida" onclick="setCuotaFiltro('Vencida',this)">Vencida</button>
+  <button class="btn-cuota pv" onclick="setCuotaFiltro('Por Vencer',this)">Por vencer</button>
+  <button class="btn-cuota pendiente" onclick="setCuotaFiltro('Pendiente',this)">Pendiente</button>
+</div>
+
 <!-- PÁGINA: RESUMEN -->
 <div class="page active" id="page-resumen">
   <div id="resumen-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
@@ -195,10 +238,12 @@ tr:nth-child(even) td{background:#FAFAFA}
 const SHEET_ID = '1VvhPWG1vByY0cm5NtDnuJZxbUGCSw730XUi5_8RWbgQ';
 const SHEET_MC = 'Master_Clientes';
 const SHEET_AB = 'Abonos';
+const SHEET_CRON = 'Cronograma';
 const TC = 3.477;
 
 // ── Estado global ────────────────────────────────────────────
-let rawMC = [], rawAB = [], filtrado = [];
+let rawMC = [], rawAB = [], rawCron = [], filtrado = [], filtradoCron = [];
+let filCuota = '';
 let chartsCreados = {};
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
 
@@ -237,7 +282,7 @@ async function fetchSheet(sheetName){
 async function cargarDatos(){
   document.getElementById('spin-icon').classList.add('spinning');
   try{
-    [rawMC, rawAB] = await Promise.all([fetchSheet(SHEET_MC), fetchSheet(SHEET_AB)]);
+    [rawMC, rawAB, rawCron] = await Promise.all([fetchSheet(SHEET_MC), fetchSheet(SHEET_AB), fetchSheet(SHEET_CRON)]);
     // Poblar filtros
     const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
     const inmuebles=[...new Set(rawMC.map(r=>str(r['INMUEBLE'])).filter(Boolean))].sort();
@@ -277,11 +322,23 @@ function aplicarFiltros(){
     if(fi && str(r['INMUEBLE'])!==fi) return false;
     return true;
   });
+  // Filtrar cronograma por proyecto
+  filtradoCron = rawCron.filter(r=>{
+    if(fp && str(r['PROYECTO'])!==fp) return false;
+    return true;
+  });
   renderResumen();
   renderProyectos();
   renderGraficos();
   renderCobranza();
   renderCartera();
+}
+
+function setCuotaFiltro(valor, btn){
+  filCuota = valor;
+  document.querySelectorAll('.btn-cuota').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCobranza();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -520,50 +577,144 @@ function renderGraficos(){
 // PÁGINA 4: COBRANZA
 // ════════════════════════════════════════════════════════════
 function renderCobranza(){
-  const activos=filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))&&num(r['Por Pagar S/.'])>0);
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  const fp = document.getElementById('fil-proyecto').value;
 
-  // Agrupar por proyecto para alertas
-  const porProy={};
-  activos.forEach(r=>{
-    const p=str(r['PROYECTO']);
-    if(!porProy[p]) porProy[p]=[];
-    porProy[p].push(r);
-  });
+  // Usar cronograma si está disponible, si no usar Master_Clientes
+  let cuotas = [];
+  if(filtradoCron && filtradoCron.length > 0){
+    cuotas = filtradoCron.filter(r => str(r['ESTADO'])==='Por Pagar');
+  }
 
-  const totalXCobrar=activos.reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
-  const totalIngresos=filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Ingresos S/.']),0);
+  // Aplicar filtro de estado de cuota
+  const cuotasFiltradas = filCuota
+    ? cuotas.filter(r => str(r['SITUACION'])===filCuota)
+    : cuotas;
 
-  let html=`
+  // Contadores para KPIs
+  const nVencidas   = cuotas.filter(r=>str(r['SITUACION'])==='Vencida').length;
+  const nPorVencer  = cuotas.filter(r=>str(r['SITUACION'])==='Por Vencer').length;
+  const nPendientes = cuotas.filter(r=>str(r['SITUACION'])==='Pendiente').length;
+  const montoVencido= cuotas.filter(r=>str(r['SITUACION'])==='Vencida').reduce((a,r)=>a+num(r['Monto Cuota']),0);
+
+  // Totales de cobranza desde Master
+  const activos    = filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
+  const totalIngr  = activos.reduce((a,r)=>a+num(r['Ingresos S/.']),0);
+  const totalCobr  = activos.reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
+
+  // Agrupar cuotas filtradas por estado para renderizar
+  const grupos = [
+    { key:'Vencida',    label:'Vencidas',       cls:'vencida',    icono:'Atrasadas' },
+    { key:'Por Vencer', label:'Por vencer',      cls:'por-vencer', icono:'Próximos 7 días' },
+    { key:'Pendiente',  label:'Pendientes',      cls:'pendiente',  icono:'A tiempo' },
+  ];
+
+  let html = `
     <div class="kpi-grid" style="margin-top:4px">
-      <div class="kpi"><div class="kpi-l">Total ingresos</div><div class="kpi-v ok" style="font-size:15px">${fmt(totalIngresos)}</div></div>
-      <div class="kpi"><div class="kpi-l">Total por cobrar</div><div class="kpi-v warn" style="font-size:15px">${fmt(totalXCobrar)}</div></div>
+      <div class="kpi"><div class="kpi-l">Total ingresos</div><div class="kpi-v ok" style="font-size:15px">${fmt(totalIngr)}</div></div>
+      <div class="kpi"><div class="kpi-l">Total por cobrar</div><div class="kpi-v warn" style="font-size:15px">${fmt(totalCobr)}</div></div>
     </div>
-    <div class="sec-label" style="margin-top:14px">Saldo pendiente por cliente</div>`;
+    <div class="kpi-grid" style="margin-top:0">
+      <div class="kpi">
+        <div class="kpi-l">Cuotas vencidas</div>
+        <div class="kpi-v danger">${nVencidas}</div>
+        <div class="kpi-s">${fmt(montoVencido)}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-l">Por vencer (7 días)</div>
+        <div class="kpi-v warn">${nPorVencer}</div>
+        <div class="kpi-s">${nPendientes} pendientes</div>
+      </div>
+    </div>`;
 
-  Object.entries(porProy).forEach(([proy,rows])=>{
-    const totalProy=rows.reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
-    html+=`<div class="alerta-card" style="margin-bottom:10px">
-      <div class="alerta-hdr">
-        <span class="alerta-hdr-t">${proy}</span>
-        <span class="alerta-hdr-v">${fmt(totalProy)}</span>
-      </div>`;
-    rows.sort((a,b)=>num(b['Por Pagar S/.'])-num(a['Por Pagar S/.'])).forEach(r=>{
-      const nombre=str(r['Nombre del Cliente'])||'Sin nombre';
-      const dpto=str(r['DPTO'])||str(r['TOWER'])||str(r['INMUEBLE'])||'';
-      const sit=str(r['SITUACION']);
-      html+=`<div class="alerta-row">
-        <div class="alerta-n">${nombre.length>35?nombre.slice(0,35)+'…':nombre}${dpto?' · '+dpto:''}<br><span style="font-size:10px;color:var(--gris-text)">${pillHtml(sit)}</span></div>
-        <div class="alerta-m">${fmt(num(r['Por Pagar S/.']))}</div>
+  if(cuotas.length === 0){
+    html += `<div class="empty">Sin datos de cronograma.<br>Asegúrate de haber exportado la hoja "Proy. Ingresos" desde el VBA.</div>`;
+    document.getElementById('cobranza-content').innerHTML = html;
+    return;
+  }
+
+  const gruposAMostrar = filCuota
+    ? grupos.filter(g => g.key === filCuota)
+    : grupos;
+
+  gruposAMostrar.forEach(grupo => {
+    const items = cuotasFiltradas
+      .filter(r => str(r['SITUACION']) === grupo.key)
+      .sort((a,b) => {
+        // Vencidas: más días de atraso primero; otras: más próximas primero
+        const fa = parseFechaCron(str(a['Fecha Cuota']));
+        const fb = parseFechaCron(str(b['Fecha Cuota']));
+        return grupo.key==='Vencida' ? fa-fb : fa-fb;
+      });
+
+    if(!items.length) return;
+
+    html += `<div class="sec-label" style="margin-top:14px"></div>
+    <div class="cron-grupo">
+      <div class="cron-hdr ${grupo.cls}">
+        <span>${grupo.label}</span>
+        <span style="font-size:10px;opacity:.8">${grupo.icono}</span>
+        <span class="cron-hdr-badge">${items.length} cuota${items.length!==1?'s':''}</span>
+      </div>
+      <div class="cron-body">`;
+
+    items.forEach(r => {
+      const cliente  = str(r['Nombre del Cliente'])||'Sin nombre';
+      const proy     = str(r['PROYECTO']);
+      const dpto     = str(r['DPTO']);
+      const torre    = str(r['TORRE']);
+      const tipo     = str(r['Tipo de Credito']);
+      const monto    = num(r['Monto Cuota']);
+      const fechaStr = str(r['Fecha Cuota']);
+      const fecha    = parseFechaCron(fechaStr);
+      const diffDias = fecha ? Math.round((fecha - hoy)/(1000*60*60*24)) : null;
+
+      let diasTxt = '';
+      if(diffDias !== null){
+        if(diffDias < 0)       diasTxt = `${Math.abs(diffDias)} días de atraso`;
+        else if(diffDias === 0) diasTxt = 'Vence hoy';
+        else if(diffDias === 1) diasTxt = 'Vence mañana';
+        else                   diasTxt = `Vence en ${diffDias} días`;
+      }
+
+      const fechaFmt = fecha
+        ? fecha.toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'})
+        : fechaStr;
+
+      const nombreCorto = cliente.length>38 ? cliente.slice(0,38)+'…' : cliente;
+
+      html += `<div class="cron-row ${grupo.cls}">
+        <div>
+          <div class="cron-cliente">${nombreCorto}</div>
+          <div class="cron-meta">
+            ${proy}${dpto?' · Dpto '+dpto:''}${torre?' T'+torre:''}
+            ${tipo ? '<br>'+tipo : ''}
+            <br>${fechaFmt}
+          </div>
+        </div>
+        <div class="cron-right">
+          <div class="cron-monto ${grupo.cls}">${fmt(monto)}</div>
+          ${diasTxt ? `<div class="cron-dias ${grupo.cls}">${diasTxt}</div>` : ''}
+        </div>
       </div>`;
     });
-    html+=`</div>`;
+
+    html += `</div></div>`;
   });
 
-  if(!Object.keys(porProy).length) html+='<div class="empty">Sin saldos pendientes</div>';
-  document.getElementById('cobranza-content').innerHTML=html;
+  document.getElementById('cobranza-content').innerHTML = html;
 }
 
-// ════════════════════════════════════════════════════════════
+function parseFechaCron(s){
+  if(!s) return null;
+  try{
+    // Formato: "2026-06-30 00:00:00" o "2026-06-30"
+    const d = new Date(str(s).slice(0,10));
+    return isNaN(d.getTime()) ? null : d;
+  }catch(e){ return null; }
+}
+
 // PÁGINA 5: CARTERA
 // ════════════════════════════════════════════════════════════
 function renderCartera(){
@@ -674,6 +825,8 @@ function mostrarPagina(id, btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
+  const filCuotaWrap = document.getElementById('fil-cuota-wrap');
+  if(filCuotaWrap) filCuotaWrap.style.display = id==='cobranza' ? 'flex' : 'none';
 }
 
 // ── Auto-refresco ─────────────────────────────────────────────
