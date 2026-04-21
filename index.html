@@ -354,8 +354,8 @@ function renderResumen(){
   const pct     = total>0?Math.round(vendido/total*1000)/10:0;
 
   const activos = inmuebles.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
-  const ingresos= activos.reduce((a,r)=>a+num(r['Ingresos S/.']),0);
-  const xCobrar = activos.reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
+  const ingresos= activos.reduce((a,r)=>a+num(r['Ingresos  S/.']),0);
+  const xCobrar = activos.reduce((a,r)=>a+num(r['Por Pagar  S/.']),0);
   const valVend = inmuebles.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['VALOR S/']),0);
 
   document.getElementById('resumen-content').innerHTML=`
@@ -407,8 +407,8 @@ function renderProyectos(){
     const pv=dptos.filter(r=>str(r['SITUACION'])==='POR VENDER').length;
     const t=dptos.length;
     const pct=t>0?Math.round(v/t*1000)/10:0;
-    const ingresos=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Ingresos S/.']),0);
-    const xCobrar=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
+    const ingresos=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Ingresos  S/.']),0);
+    const xCobrar=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Por Pagar  S/.']),0);
 
     html+=`
     <div style="margin-bottom:4px">
@@ -600,8 +600,8 @@ function renderCobranza(){
 
   // Totales de cobranza desde Master
   const activos    = filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
-  const totalIngr  = activos.reduce((a,r)=>a+num(r['Ingresos S/.']),0);
-  const totalCobr  = activos.reduce((a,r)=>a+num(r['Por Pagar S/.']),0);
+  const totalIngr  = activos.reduce((a,r)=>a+num(r['Ingresos  S/.']),0);
+  const totalCobr  = activos.reduce((a,r)=>a+num(r['Por Pagar  S/.']),0);
 
   // Agrupar cuotas filtradas por estado para renderizar
   const grupos = [
@@ -757,8 +757,8 @@ function renderCartera(){
 
     // KPIs acumulados
     clientes[nombre].valor += num(r['VALOR S/']);
-    clientes[nombre].ingresos += num(r['Ingresos S/.']);
-    clientes[nombre].porCobrar += num(r['Por Pagar S/.']);
+    clientes[nombre].ingresos += num(r['Ingresos  S/.']);
+    clientes[nombre].porCobrar += num(r['Por Pagar  S/.']);
   });
 
   const listaClientes = Object.values(clientes)
