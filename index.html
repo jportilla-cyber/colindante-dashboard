@@ -615,19 +615,34 @@ function renderCobranzaNueva(){
     <div class="sec-label" style="margin-top:14px">Tipo de crédito</div>
   `;
 
-  // Agrupar por tipo de crédito
-  const tiposCredito = {};
+  // Agrupar por tipo de crédito (5 tipos principales)
+  const tiposCredito = {
+    'Hipotecario': { cobrado: 0, porCobrar: 0, contar: 0 },
+    'Directo': { cobrado: 0, porCobrar: 0, contar: 0 },
+    'Contado': { cobrado: 0, porCobrar: 0, contar: 0 },
+    'Hipotecario Postergado': { cobrado: 0, porCobrar: 0, contar: 0 },
+    'Por Confirmar': { cobrado: 0, porCobrar: 0, contar: 0 }
+  };
+
   activos.forEach(r => {
-    const tipo = str(r['TIPO CREDITO']) || 'Sin especificar';
-    if (!tiposCredito[tipo]) {
-      tiposCredito[tipo] = { cobrado: 0, porCobrar: 0, contar: 0 };
+    let tipo = str(r['TIPO CREDITO']).trim();
+    // Si está vacío, clasificar como "Por Confirmar"
+    if (!tipo) {
+      tipo = 'Por Confirmar';
     }
+    // Asegurar que solo use uno de los 5 tipos
+    if (!tiposCredito[tipo]) {
+      tipo = 'Por Confirmar';
+    }
+    
     tiposCredito[tipo].cobrado += num(r['Ingresos  S/.']);
     tiposCredito[tipo].porCobrar += num(r['Por Pagar  S/.']);
     tiposCredito[tipo].contar += 1;
   });
 
   Object.entries(tiposCredito).forEach(([tipo, datos]) => {
+    if (datos.contar === 0) return; // No mostrar tipos sin clientes
+    
     const total = datos.cobrado + datos.porCobrar;
     const pct = total > 0 ? Math.round((datos.cobrado / total) * 1000) / 10 : 0;
     html += `
@@ -653,9 +668,14 @@ function renderCobranzaNueva(){
   activos.forEach(r => {
     const nombre = str(r['Nombre del Cliente']);
     if (!clientes[nombre]) {
+      let tipoCredito = str(r['TIPO CREDITO']).trim();
+      if (!tipoCredito) {
+        tipoCredito = 'Por Confirmar';
+      }
       clientes[nombre] = {
         nombre,
         proyecto: str(r['PROYECTO']),
+        tipoCredito: tipoCredito,
         dptos: new Set(),
         ests: new Set(),
         deps: new Set(),
@@ -688,6 +708,7 @@ function renderCobranzaNueva(){
         <div class="cliente-card por-pagar">
           <div class="cliente-nombre">${c.nombre}</div>
           <div style="font-size:11px;color:var(--gris-text);margin-bottom:8px">
+            <strong>${c.tipoCredito}</strong><br>
             ${c.proyecto}${textUnidades ? ' · ' + textUnidades : ''}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
