@@ -625,7 +625,7 @@ function renderCobranzaNueva(){
   };
 
   activos.forEach(r => {
-    let tipo = str(r['TIPO CREDITO']).trim();
+    let tipo = str(r['Tipo de  Credito']).trim();
     // Si está vacío, clasificar como "Por Confirmar"
     if (!tipo) {
       tipo = 'Por Confirmar';
@@ -668,7 +668,7 @@ function renderCobranzaNueva(){
   activos.forEach(r => {
     const nombre = str(r['Nombre del Cliente']);
     if (!clientes[nombre]) {
-      let tipoCredito = str(r['TIPO CREDITO']).trim();
+      let tipoCredito = str(r['Tipo de  Credito']).trim();
       if (!tipoCredito) {
         tipoCredito = 'Por Confirmar';
       }
