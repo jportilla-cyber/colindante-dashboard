@@ -329,9 +329,10 @@ function aplicarFiltros(){
     if(fi && str(r['INMUEBLE'])!==fi) return false;
     return true;
   });
-  // Filtrar cronograma por proyecto
+  // Filtrar cronograma por proyecto y situación (usa ESTADO VENTA en la hoja Proy. Ingresos)
   filtradoCron = rawCron.filter(r=>{
     if(fp && str(r['PROYECTO'])!==fp) return false;
+    if(fs && str(r['ESTADO VENTA'])!==fs) return false;
     return true;
   });
   renderResumen();
@@ -730,6 +731,7 @@ function renderCronograma(){
   const hoy = new Date();
   hoy.setHours(0,0,0,0);
   const fp = document.getElementById('fil-proyecto').value;
+  const fs = document.getElementById('fil-situacion').value;
 
   // Usar cronograma si está disponible, si no usar Master_Clientes
   let cuotas = [];
@@ -737,16 +739,26 @@ function renderCronograma(){
     cuotas = filtradoCron.filter(r => str(r['ESTADO'])==='Por Pagar');
   }
 
+  // Aplicar filtro de situación (ESTADO VENTA) explícitamente
+  let cuotasConFiltroSituacion = cuotas;
+  if(fs){
+    cuotasConFiltroSituacion = cuotas.filter(r => {
+      // Buscar ESTADO VENTA en los datos
+      const estadoVenta = str(r['ESTADO VENTA']);
+      return estadoVenta === fs;
+    });
+  }
+
   // Aplicar filtro de estado de cuota
   const cuotasFiltradas = filCuota
-    ? cuotas.filter(r => str(r['SITUACION'])===filCuota)
-    : cuotas;
+    ? cuotasConFiltroSituacion.filter(r => str(r['SITUACION'])===filCuota)
+    : cuotasConFiltroSituacion;
 
-  // Contadores para KPIs
-  const nVencidas   = cuotas.filter(r=>str(r['SITUACION'])==='Vencida').length;
-  const nPorVencer  = cuotas.filter(r=>str(r['SITUACION'])==='Por Vencer').length;
-  const nPendientes = cuotas.filter(r=>str(r['SITUACION'])==='Pendiente').length;
-  const montoVencido= cuotas.filter(r=>str(r['SITUACION'])==='Vencida').reduce((a,r)=>a+num(r['Monto Cuota']),0);
+  // Contadores para KPIs (usar cuotasConFiltroSituacion para respetar el filtro de situación)
+  const nVencidas   = cuotasConFiltroSituacion.filter(r=>str(r['SITUACION'])==='Vencida').length;
+  const nPorVencer  = cuotasConFiltroSituacion.filter(r=>str(r['SITUACION'])==='Por Vencer').length;
+  const nPendientes = cuotasConFiltroSituacion.filter(r=>str(r['SITUACION'])==='Pendiente').length;
+  const montoVencido= cuotasConFiltroSituacion.filter(r=>str(r['SITUACION'])==='Vencida').reduce((a,r)=>a+num(r['Monto Cuota']),0);
 
   // Totales de cobranza desde Master
   const activos    = filtrado.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION'])));
@@ -778,9 +790,9 @@ function renderCronograma(){
       </div>
     </div>`;
 
-  if(cuotas.length === 0){
+  if(cuotasConFiltroSituacion.length === 0){
     html += `<div class="empty">Sin datos de cronograma.<br>Asegúrate de haber exportado la hoja "Proy. Ingresos" desde el VBA.</div>`;
-    document.getElementById('cobranza-content').innerHTML = html;
+    document.getElementById('cronograma-content').innerHTML = html;
     return;
   }
 
