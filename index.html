@@ -251,6 +251,7 @@ const TC = 3.477;
 // ── Estado global ────────────────────────────────────────────
 let rawMC = [], rawAB = [], rawCron = [], filtrado = [], filtradoCron = [];
 let filCuota = '';
+let filTipoCredito = '';
 let chartsCreados = {};
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
 
@@ -335,6 +336,9 @@ function aplicarFiltros(){
     if(fs && str(r['ESTADO VENTA'])!==fs) return false;
     return true;
   });
+  // Resetear filtros especiales
+  filCuota = '';
+  window.filTipoCredito = '';
   renderResumen();
   renderProyectos();
   renderGraficos();
@@ -348,6 +352,14 @@ function setCuotaFiltro(valor, btn){
   document.querySelectorAll('.btn-cuota').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderCronograma();
+}
+
+function setTipoCredFiltro(valor, btn){
+  window.filTipoCredito = valor;
+  const todosLosBotones = btn.parentElement.querySelectorAll('button');
+  todosLosBotones.forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCobranzaNueva();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -663,17 +675,41 @@ function renderCobranzaNueva(){
 
   // Listado de clientes por pagar
   html += `<div class="sec-label" style="margin-top:14px">Clientes por pagar</div>`;
+  
+  // Obtener tipos de crédito únicos de los clientes activos
+  const tiposParaFiltrar = [...new Set(
+    activos.map(r => {
+      let tipo = str(r['Tipo de  Credito']).trim();
+      if (!tipo || !tiposCredito[tipo]) tipo = 'Por Confirmar';
+      return tipo;
+    })
+  )].sort();
 
-  // Agrupar por cliente
+  // Agregar selector de filtro por tipo de crédito
+  html += `
+    <div style="display:flex;gap:6px;overflow-x:auto;padding:8px 0 4px;scrollbar-width:none;margin-bottom:8px">
+      <button class="btn-cuota all active" onclick="setTipoCredFiltro('',this)">Todos</button>
+  `;
+  
+  tiposParaFiltrar.forEach(tipo => {
+    html += `<button class="btn-cuota pendiente" onclick="setTipoCredFiltro('${tipo}',this)">${tipo}</button>`;
+  });
+  
+  html += `</div>`;
+
+  // Agrupar por cliente + tipo de crédito (para separar unidades por tipo)
   const clientes = {};
   activos.forEach(r => {
     const nombre = str(r['Nombre del Cliente']);
-    if (!clientes[nombre]) {
-      let tipoCredito = str(r['Tipo de  Credito']).trim();
-      if (!tipoCredito) {
-        tipoCredito = 'Por Confirmar';
-      }
-      clientes[nombre] = {
+    let tipoCredito = str(r['Tipo de  Credito']).trim();
+    if (!tipoCredito) {
+      tipoCredito = 'Por Confirmar';
+    }
+    // Clave única: nombre + tipo de crédito
+    const key = nombre + '|' + tipoCredito;
+    
+    if (!clientes[key]) {
+      clientes[key] = {
         nombre,
         proyecto: str(r['PROYECTO']),
         tipoCredito: tipoCredito,
@@ -684,15 +720,16 @@ function renderCobranzaNueva(){
         porCobrar: 0
       };
     }
-    if(str(r['DPTO'])) clientes[nombre].dptos.add(str(r['DPTO']));
-    if(str(r['EST'])) clientes[nombre].ests.add(str(r['EST']));
-    if(str(r['DEP'])) clientes[nombre].deps.add(str(r['DEP']));
-    clientes[nombre].cobrado += num(r['Ingresos  S/.']);
-    clientes[nombre].porCobrar += num(r['Por Pagar  S/.']);
+    if(str(r['DPTO'])) clientes[key].dptos.add(str(r['DPTO']));
+    if(str(r['EST'])) clientes[key].ests.add(str(r['EST']));
+    if(str(r['DEP'])) clientes[key].deps.add(str(r['DEP']));
+    clientes[key].cobrado += num(r['Ingresos  S/.']);
+    clientes[key].porCobrar += num(r['Por Pagar  S/.']);
   });
 
   const listaClientes = Object.values(clientes)
-    .filter(c => c.porCobrar > 0)
+    .filter(c => c.porCobrar > 0 || c.ests.size > 0)
+    .filter(c => window.filTipoCredito ? c.tipoCredito === window.filTipoCredito : true)
     .sort((a,b) => b.porCobrar - a.porCobrar);
 
   if(listaClientes.length === 0){
@@ -989,6 +1026,11 @@ function mostrarPagina(id, btn){
   btn.classList.add('active');
   const filCuotaWrap = document.getElementById('fil-cuota-wrap');
   if(filCuotaWrap) filCuotaWrap.style.display = id==='cronograma' ? 'flex' : 'none';
+  
+  // Resetear filtro de tipo de crédito cuando sales de la pestaña cobranza
+  if(id !== 'cobranza'){
+    window.filTipoCredito = '';
+  }
 }
 
 // ── Auto-refresco ─────────────────────────────────────────────
