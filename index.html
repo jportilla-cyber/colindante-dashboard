@@ -696,12 +696,15 @@ function renderCobranzaNueva(){
   // Agregar selector de filtro por tipo de crédito
   html += `
     <div style="display:flex;gap:6px;overflow-x:auto;padding:8px 0 4px;scrollbar-width:none;margin-bottom:8px">
-       <button class="btn-cuota all ${!window.filTipoCredito ? 'active' : ''}" onclick="setTipoCredFiltro('',this)">Todos</button>
-   `;
-   
-   tiposParaFiltrar.forEach(tipo => {
-     const esActivo = window.filTipoCredito === tipo ? 'active' : '';
-     html += `<button class="btn-cuota pendiente ${esActivo}" onclick="setTipoCredFiltro('${tipo}',this)">${tipo}</button>`;
+      <button class="btn-cuota all ${!window.filTipoCredito ? 'active' : ''}" onclick="setTipoCredFiltro('',this)">Todos</button>
+  `;
+  
+  tiposParaFiltrar.forEach(tipo => {
+    const esActivo = window.filTipoCredito === tipo ? 'active' : '';
+    html += `<button class="btn-cuota pendiente ${esActivo}" onclick="setTipoCredFiltro('${tipo}',this)">${tipo}</button>`;
+  });
+  
+  html += `</div>`;
 
   // Agrupar por cliente + tipo de crédito (para separar unidades por tipo)
   const clientes = {};
