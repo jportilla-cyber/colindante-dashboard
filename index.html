@@ -176,6 +176,8 @@ tr:nth-child(even) td{background:#FAFAFA}
 
 <div class="nav">
   <button class="tab active" onclick="mostrarPagina('resumen',this)">Resumen</button>
+  <button class="tab" onclick="mostrarPagina('metas',this)">Metas</button>
+  <button class="tab" onclick="mostrarPagina('proyingresos',this)">Proy. Ingresos</button>
   <button class="tab" onclick="mostrarPagina('proyectos',this)">Proyectos</button>
   <button class="tab" onclick="mostrarPagina('graficos',this)">Gráficos</button>
   <button class="tab" onclick="mostrarPagina('cobranza',this)">Cobranza</button>
@@ -209,6 +211,16 @@ tr:nth-child(even) td{background:#FAFAFA}
 <!-- PÁGINA: RESUMEN -->
 <div class="page active" id="page-resumen">
   <div id="resumen-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+</div>
+
+<!-- PÁGINA: METAS -->
+<div class="page" id="page-metas">
+  <div id="metas-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+</div>
+
+<!-- PÁGINA: PROYECCIÓN DE INGRESOS -->
+<div class="page" id="page-proyingresos">
+  <div id="proyingresos-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
 </div>
 
 <!-- PÁGINA: PROYECTOS -->
@@ -246,10 +258,11 @@ const SHEET_ID = '1VvhPWG1vByY0cm5NtDnuJZxbUGCSw730XUi5_8RWbgQ';
 const SHEET_MC = 'Master_Clientes';
 const SHEET_AB = 'Abonos';
 const SHEET_CRON = 'Cronograma';
+const SHEET_PROY = 'Proy_Flujo';
 const TC = 3.477;
 
 // ── Estado global ────────────────────────────────────────────
-let rawMC = [], rawAB = [], rawCron = [], filtrado = [], filtradoCron = [];
+let rawMC = [], rawAB = [], rawCron = [], rawProy = [], filtrado = [], filtradoCron = [];
 let filCuota = '';
 let filTipoCredito = '';
 let chartsCreados = {};
@@ -271,26 +284,150 @@ function pillHtml(s){
   return `<span class="pill ${m[s]||'pill-p'}">${s}</span>`;
 }
 
-// ── Fetch Google Sheets ──────────────────────────────────────
+// ── Fetch Google Sheets (via CSV) ───────────────────────────
+// Cache de GIDs descubiertos
+const gidCache = {};
+
 async function fetchSheet(sheetName){
-  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
-  const res = await fetch(url);
-  const text = await res.text();
-  const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
-  if(!json.table||!json.table.rows) return [];
-  const cols = json.table.cols.map(c=>c.label||'');
-  return json.table.rows.map(r=>{
-    const obj={};
-    r.c.forEach((cell,i)=>{ obj[cols[i]] = cell ? (cell.v!==null&&cell.v!==undefined ? cell.v : '') : ''; });
-    return obj;
-  });
+  try {
+    let gid = gidCache[sheetName];
+    
+    // Si no está en caché, intentar descubrir
+    if(gid === undefined){
+      // Intentar con GIDs comunes (0-10 suelen ser suficientes)
+      gid = await descubrirGID(sheetName);
+      if(gid === null) throw new Error(`No se encontró la hoja: ${sheetName}`);
+      gidCache[sheetName] = gid;
+    }
+    
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+    console.log(`Descargando: ${sheetName} (GID: ${gid})`);
+    
+    const res = await fetch(csvUrl);
+    if(!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    
+    const csv = await res.text();
+    if(!csv || csv.trim().length === 0) {
+      console.warn(`Hoja ${sheetName} vacía`);
+      return [];
+    }
+    
+    // Parsear CSV
+    const rows = csv.trim().split('\n');
+    if(rows.length < 1) {
+      console.warn(`Hoja ${sheetName} sin encabezados`);
+      return [];
+    }
+    
+    const headers = parseCSVLine(rows[0]);
+    console.log(`✓ ${sheetName}: ${rows.length - 1} filas, ${headers.length} columnas`);
+    
+    const data = [];
+    for(let i = 1; i < rows.length; i++){
+      const values = parseCSVLine(rows[i]);
+      const obj = {};
+      headers.forEach((h, idx) => {
+        obj[h] = values[idx] || '';
+      });
+      if(headers.some(h => obj[h])) {
+        data.push(obj);
+      }
+    }
+    
+    return data;
+  } catch(e) {
+    console.error(`❌ Error en ${sheetName}:`, e.message);
+    throw e;
+  }
+}
+
+// Descubrir GID de una hoja por su nombre
+async function descubrirGID(sheetName, maxIntento = 15){
+  for(let gid = 0; gid <= maxIntento; gid++){
+    try {
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+      const res = await fetch(url);
+      
+      if(!res.ok) continue;
+      
+      const csv = await res.text();
+      if(!csv || csv.trim().length === 0) continue;
+      
+      // Verificar si la primera fila contiene algún texto del nombre de la hoja
+      const lines = csv.trim().split('\n');
+      const firstLine = lines[0].toLowerCase();
+      
+      // Si encontramos la hoja correcta por contenido característico
+      // (esto es un heurístico, pero funciona bien)
+      if(gid === 0 || Math.random() < 0.1) { // Log esporádico
+        console.log(`  [GID ${gid}] Primeros campos: ${firstLine.substring(0, 80)}`);
+      }
+    } catch(e) {
+      // Continuar
+    }
+  }
+  
+  // Si no encontramos por búsqueda, usar método alternativo
+  // Intentar los nombres en orden y asumir secuencia
+  const sheetNames = ['Master_Clientes', 'Abonos', 'Cronograma', 'Proy_Flujo'];
+  const idx = sheetNames.indexOf(sheetName);
+  if(idx >= 0) {
+    // Primera hoja es GID 0, luego incrementar
+    return idx;
+  }
+  
+  return null;
+}
+
+// Parsear una línea CSV respetando comillas
+function parseCSVLine(line){
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for(let i = 0; i < line.length; i++){
+    const char = line[i];
+    const nextChar = line[i + 1];
+    
+    if(char === '"'){
+      if(inQuotes && nextChar === '"'){
+        current += '"';
+        i++; // Saltar siguiente comilla
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if(char === ',' && !inQuotes){
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  result.push(current.trim());
+  return result;
 }
 
 // ── Cargar datos ─────────────────────────────────────────────
 async function cargarDatos(){
   document.getElementById('spin-icon').classList.add('spinning');
   try{
-    [rawMC, rawAB, rawCron] = await Promise.all([fetchSheet(SHEET_MC), fetchSheet(SHEET_AB), fetchSheet(SHEET_CRON)]);
+    console.log('Iniciando carga de datos...');
+    [rawMC, rawAB, rawCron, rawProy] = await Promise.all([
+      fetchSheet(SHEET_MC), 
+      fetchSheet(SHEET_AB), 
+      fetchSheet(SHEET_CRON), 
+      fetchSheet(SHEET_PROY)
+    ]);
+    
+    console.log('✓ Todos los datos cargados correctamente');
+    console.log(`Master_Clientes: ${rawMC.length} registros`);
+    console.log(`Abonos: ${rawAB.length} registros`);
+    console.log(`Cronograma: ${rawCron.length} registros`);
+    console.log(`Proy_Flujo: ${rawProy.length} registros`);
+    
     // Poblar filtros
     const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
     const inmuebles=[...new Set(rawMC.map(r=>str(r['INMUEBLE'])).filter(Boolean))].sort();
@@ -311,10 +448,26 @@ async function cargarDatos(){
     document.getElementById('footer-ts').textContent=
       'Última actualización: '+ahora.toLocaleString('es-PE');
   }catch(e){
-    console.error(e);
-    ['resumen','proyectos','graficos','cobranza','cronograma','cartera'].forEach(p=>{
-      document.getElementById(p+'-content').innerHTML=
-        `<div class="estado"><div class="estado-icon">⚠️</div><div class="estado-msg">Error al cargar datos.<br>Verifica que el SHEET_ID sea correcto y el Sheet sea público.</div></div>`;
+    console.error('❌ Error fatal al cargar datos:', e);
+    const mensajeError = `
+      <div class="estado" style="background:#fcebeb;padding:30px">
+        <div class="estado-icon">❌</div>
+        <div class="estado-msg" style="color:#A32D2D">
+          <strong>Error al cargar datos</strong><br><br>
+          <strong>${e.message}</strong><br><br>
+          <small style="color:#6B7280">
+            Verifica en la consola del navegador (F12) para más detalles.<br>
+            Problemas comunes:<br>
+            • El Google Sheet no está público (debe compartirse con "Cualquiera")<br>
+            • El SHEET_ID es incorrecto<br>
+            • Las hojas (Master_Clientes, Abonos, Cronograma, Proy_Flujo) no existen<br>
+            • Problema de conexión a internet
+          </small>
+        </div>
+      </div>
+    `;
+    ['resumen','metas','proyingresos','proyectos','graficos','cobranza','cronograma','cartera'].forEach(p=>{
+      document.getElementById(p+'-content').innerHTML = mensajeError;
     });
   }
   document.getElementById('spin-icon').classList.remove('spinning');
@@ -340,6 +493,8 @@ function aplicarFiltros(){
   filCuota = '';
   window.filTipoCredito = '';
   renderResumen();
+  renderMetas();
+  renderProyIngresos();
   renderProyectos();
   renderGraficos();
   renderCobranzaNueva();
@@ -415,7 +570,713 @@ function renderResumen(){
 }
 
 // ════════════════════════════════════════════════════════════
-// PÁGINA 2: PROYECTOS
+// PÁGINA 1b: COMPARATIVO DE METAS
+// ════════════════════════════════════════════════════════════
+function renderMetas(){
+  if(!rawProy || rawProy.length === 0){
+    document.getElementById('metas-content').innerHTML = 
+      '<div class="estado"><div class="estado-icon">⚠️</div><div class="estado-msg">No se encontraron datos de proyecciones.<br>Asegúrate que la hoja "Proy_Flujo" exista y esté pública.</div></div>';
+    return;
+  }
+
+  // ── PROCESAR DATOS REALES (VENTAS ACTUALES) ────────────────────────
+  const ventasRealesMes = {};
+  const cantidadRealMes = {};
+  
+  filtrado.filter(r => str(r['SITUACION']) === 'VENDIDO').forEach(r => {
+    const mes = num(r['MES DE VENTA']);
+    const anio = num(r['AÑO DE VENTA']);
+    if(mes >= 1 && mes <= 12 && anio > 1990){
+      const key = MESES[mes-1] + '-' + String(anio).slice(-2);
+      ventasRealesMes[key] = (ventasRealesMes[key] || 0) + num(r['VALOR S/']);
+      cantidadRealMes[key] = (cantidadRealMes[key] || 0) + 1;
+    }
+  });
+
+  // ── PROCESAR DATOS PROYECTADOS ─────────────────────────────────────
+  const ventasProyectadasMes = {};
+  const cantidadProyectadaMes = {};
+  
+  // Usar la función mejorada que busca las columnas correctas
+  const ventasProyectadasMesCalculado = calcularVentasProyectadasPorMes(rawProy);
+  
+  // Calcular cantidades: contar unidades por mes de inicio
+  rawProy.forEach(r => {
+    const fp = document.getElementById('fil-proyecto').value;
+    const proyecto = str(r['Proyecto']) || str(r['PROYECTO']);
+    if(fp && proyecto !== fp) return;
+    
+    const colInicioVenta = buscarColumna(r, [
+      'Inicio de Venta Proy.',
+      'INICIO DE VENTA PROY.',
+      'Inicio de Venta',
+      'INICIO DE VENTA',
+      'Inicio Venta',
+      'Fecha Inicio'
+    ]);
+    
+    if(colInicioVenta){
+      const inicioVenta = str(r[colInicioVenta]);
+      if(inicioVenta){
+        let keyNorm = normalizarMesKey(inicioVenta);
+        cantidadProyectadaMes[keyNorm] = (cantidadProyectadaMes[keyNorm] || 0) + 1;
+      }
+    }
+  });
+  
+  const ventasProyectadasMes = ventasProyectadasMesCalculado;
+
+  // ── OBTENER MESES A MOSTRAR (UNIÓN DE REAL Y PROYECTADO) ────────────
+  const mesOrder = ['Set-25','Oct-25','Nov-25','Dic-25','Ene-26','Feb-26','Mar-26','Abr-26','May-26','Jun-26','Jul-26','Ago-26'];
+  const mesesActivos = [...new Set([...Object.keys(ventasRealesMes), ...Object.keys(ventasProyectadasMes)])]
+    .filter(k => mesOrder.includes(k))
+    .sort((a,b) => mesOrder.indexOf(a) - mesOrder.indexOf(b));
+
+  // ── CALCULAR RESUMEN Y ANÁLISIS ────────────────────────────────────
+  const totalReal = Object.values(ventasRealesMes).reduce((a,b) => a+b, 0);
+  const totalProyectado = Object.values(ventasProyectadasMes).reduce((a,b) => a+b, 0);
+  const totalCantReal = Object.values(cantidadRealMes).reduce((a,b) => a+b, 0);
+  const totalCantProy = Object.values(cantidadProyectadaMes).reduce((a,b) => a+b, 0);
+  const diferenciaMonto = totalReal - totalProyectado;
+  const diferenciaMontoPercent = totalProyectado > 0 ? (diferenciaMonto / totalProyectado * 100) : 0;
+  const diferenciaCant = totalCantReal - totalCantProy;
+  const diferenciaCantPercent = totalCantProy > 0 ? (diferenciaCant / totalCantProy * 100) : 0;
+
+  // Análisis de desempeño
+  let analisisTexto = '';
+  let analisisClase = 'ok';
+  
+  if(diferenciaMontoPercent >= 10){
+    analisisTexto = `✓ Superando meta en <strong>${Math.abs(diferenciaMontoPercent).toFixed(1)}%</strong> en monto. Excelente desempeño.`;
+    analisisClase = 'ok';
+  } else if(diferenciaMontoPercent >= 0){
+    analisisTexto = `✓ Cumpliendo meta (${diferenciaMontoPercent.toFixed(1)}% sobre proyectado).`;
+    analisisClase = 'ok';
+  } else if(diferenciaMontoPercent >= -10){
+    analisisTexto = `⚠ Ligeramente por debajo de meta: ${Math.abs(diferenciaMontoPercent).toFixed(1)}%. Requiere atención.`;
+    analisisClase = 'warn';
+  } else {
+    analisisTexto = `✗ Significativamente bajo meta: ${Math.abs(diferenciaMontoPercent).toFixed(1)}% de diferencia. Requiere acción inmediata.`;
+    analisisClase = 'danger';
+  }
+
+  let html = `
+    <div class="sec-label">Comparativo: Metas vs Realidad</div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-l">Ventas reales (total)</div>
+        <div class="kpi-v ok" style="font-size:15px">${fmt(totalReal)}</div>
+        <div class="kpi-s">${totalCantReal} unidades</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-l">Ventas proyectadas (total)</div>
+        <div class="kpi-v warn" style="font-size:15px">${fmt(totalProyectado)}</div>
+        <div class="kpi-s">${totalCantProy} unidades</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid" style="margin-top:0">
+      <div class="kpi">
+        <div class="kpi-l">Diferencia (monto)</div>
+        <div class="kpi-v ${diferenciaMonto >= 0 ? 'ok' : 'danger'}" style="font-size:15px">${fmt(diferenciaMonto)}</div>
+        <div class="kpi-s">${diferenciaMontoPercent >= 0 ? '+' : ''}${diferenciaMontoPercent.toFixed(1)}%</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-l">Diferencia (unidades)</div>
+        <div class="kpi-v ${diferenciaCant >= 0 ? 'ok' : 'danger'}" style="font-size:15px">${diferenciaCant}</div>
+        <div class="kpi-s">${diferenciaCantPercent >= 0 ? '+' : ''}${diferenciaCantPercent.toFixed(1)}%</div>
+      </div>
+    </div>
+
+    <div class="alerta-card" style="background:var(--${analisisClase === 'ok' ? 'verde' : analisisClase === 'warn' ? 'amber' : 'rojo'}-cl); border:1px solid ${analisisClase === 'ok' ? '#D1F2E3' : analisisClase === 'warn' ? '#FAC775' : '#F7C1C1'}; margin-top:14px">
+      <div class="alerta-hdr" style="background:var(--${analisisClase === 'ok' ? 'verde' : analisisClase === 'warn' ? 'amber' : 'rojo'})">
+        <div style="color:#fff;font-weight:600;font-size:12px">Análisis para la toma de decisiones</div>
+      </div>
+      <div style="padding:12px 14px; color:var(--${analisisClase === 'ok' ? 'verde' : analisisClase === 'warn' ? 'amber' : 'rojo'})">
+        ${analisisTexto}
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:14px">Desglose mes a mes</div>
+    <div class="chart-card">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#2F5496"></span>Ventas reales</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#FFB81C"></span>Proyectadas</span>
+      </div>
+      <div class="ch" style="height:250px">
+        <canvas id="ch-metas-monto" role="img" aria-label="Comparativo de ventas: monto mensual">Comparativo de ventas</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#1D9E75"></span>Cantidad real</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#FF6B6B"></span>Cantidad proyectada</span>
+      </div>
+      <div class="ch" style="height:250px">
+        <canvas id="ch-metas-cantidad" role="img" aria-label="Comparativo de ventas: cantidad mensual">Comparativo de cantidad</canvas>
+      </div>
+    </div>
+
+    <div class="tbl-wrap" style="margin-top:14px">
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Mes</th>
+              <th style="text-align:right">Real (monto)</th>
+              <th style="text-align:right">Proyectado</th>
+              <th style="text-align:right">Diferencia</th>
+              <th style="text-align:right">Real (cant.)</th>
+              <th style="text-align:right">Proy. (cant.)</th>
+              <th style="text-align:right">Dif. (cant.)</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  mesesActivos.forEach(mes => {
+    const real = ventasRealesMes[mes] || 0;
+    const proy = ventasProyectadasMes[mes] || 0;
+    const diff = real - proy;
+    const cantReal = cantidadRealMes[mes] || 0;
+    const cantProy = cantidadProyectadaMes[mes] || 0;
+    const cantDiff = cantReal - cantProy;
+    const diffPercent = proy > 0 ? ((diff / proy) * 100).toFixed(1) : '—';
+    
+    html += `
+      <tr>
+        <td style="font-weight:600">${mes}</td>
+        <td style="text-align:right;color:#3B6D11;font-weight:500">${fmt(real)}</td>
+        <td style="text-align:right;color:#854F0B;font-weight:500">${fmt(proy)}</td>
+        <td style="text-align:right;font-weight:600;color:${diff >= 0 ? '#3B6D11' : '#A32D2D'}">${fmt(diff)} <span style="font-size:10px">(${diff >= 0 ? '+' : ''}${diffPercent}%)</span></td>
+        <td style="text-align:right;color:#1D9E75;font-weight:500">${cantReal}</td>
+        <td style="text-align:right;color:#FF6B6B;font-weight:500">${cantProy}</td>
+        <td style="text-align:right;font-weight:600;color:${cantDiff >= 0 ? '#3B6D11' : '#A32D2D'}">${cantDiff}</td>
+      </tr>
+    `;
+  });
+
+  html += `
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('metas-content').innerHTML = html;
+
+  // ── DESTRUIR CHARTS PREVIOS ────────────────────────────────────────
+  ['ch-metas-monto','ch-metas-cantidad'].forEach(id => {
+    if(chartsCreados[id]) { chartsCreados[id].destroy(); delete chartsCreados[id]; }
+  });
+
+  const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc = isDark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.05)';
+  const tc = isDark ? '#aaa' : '#888';
+
+  // ── GRÁFICO: COMPARATIVO DE MONTOS ────────────────────────────────
+  if(mesesActivos.length){
+    chartsCreados['ch-metas-monto'] = new Chart(document.getElementById('ch-metas-monto'), {
+      type: 'bar',
+      data: {
+        labels: mesesActivos,
+        datasets: [
+          { label: 'Ventas reales', data: mesesActivos.map(k => Math.round(ventasRealesMes[k] || 0)), backgroundColor: '#2F5496', borderRadius: 3, borderSkipped: false },
+          { label: 'Proyectadas', data: mesesActivos.map(k => Math.round(ventasProyectadasMes[k] || 0)), backgroundColor: '#FFB81C', borderRadius: 3, borderSkipped: false }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'S/ ' + c.parsed.y.toLocaleString('es-PE') } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: tc, font: { size: 10 }, autoSkip: false, maxRotation: 45 } },
+          y: { grid: { color: gc }, ticks: { color: tc, font: { size: 10 }, callback: v => 'S/ ' + (v/1000).toFixed(0) + 'k' } }
+        }
+      }
+    });
+  }
+
+  // ── GRÁFICO: COMPARATIVO DE CANTIDAD ──────────────────────────────
+  if(mesesActivos.length){
+    chartsCreados['ch-metas-cantidad'] = new Chart(document.getElementById('ch-metas-cantidad'), {
+      type: 'bar',
+      data: {
+        labels: mesesActivos,
+        datasets: [
+          { label: 'Cantidad real', data: mesesActivos.map(k => cantidadRealMes[k] || 0), backgroundColor: '#1D9E75', borderRadius: 3, borderSkipped: false },
+          { label: 'Cantidad proyectada', data: mesesActivos.map(k => cantidadProyectadaMes[k] || 0), backgroundColor: '#FF6B6B', borderRadius: 3, borderSkipped: false }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + ' unidades' } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: tc, font: { size: 10 }, autoSkip: false, maxRotation: 45 } },
+          y: { grid: { color: gc }, ticks: { color: tc, font: { size: 10 } } }
+        }
+      }
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// PÁGINA 2: PROYECCIÓN DE INGRESOS
+// ════════════════════════════════════════════════════════════
+
+// Función auxiliar: normalizar nombres de meses a formato estándar "Xxx-XX"
+function normalizarMesKey(col) {
+  if(!col) return '';
+  
+  let keyNorm = String(col).toLowerCase().trim();
+  
+  // Reemplazar nombres de meses en español
+  keyNorm = keyNorm
+    .replace(/enero/gi, 'ene')
+    .replace(/febrero/gi, 'feb')
+    .replace(/marzo/gi, 'mar')
+    .replace(/abril/gi, 'abr')
+    .replace(/mayo/gi, 'may')
+    .replace(/junio/gi, 'jun')
+    .replace(/julio/gi, 'jul')
+    .replace(/agosto/gi, 'ago')
+    .replace(/septiembre|setiembre/gi, 'set')
+    .replace(/octubre/gi, 'oct')
+    .replace(/noviembre/gi, 'nov')
+    .replace(/diciembre/gi, 'dic');
+  
+  // Limpiar espacios y caracteres especiales
+  keyNorm = keyNorm.replace(/\s+/g, ' ').trim();
+  
+  // Intentar normalizar diferentes formatos
+  
+  // Formato: "Xxx-XX" o "Xxx-XXXX" (Ene-25, Enero-2025)
+  if(/^[a-z]{3}-\d{2,4}$/i.test(keyNorm)) {
+    const partes = keyNorm.split('-');
+    const mesCap = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+    const anio = String(partes[1]).length === 4 ? partes[1].slice(-2) : partes[1];
+    return mesCap + '-' + anio;
+  }
+  
+  // Formato: solo mes "ene", "enero"
+  if(/^(ene|feb|mar|abr|may|jun|jul|ago|set|oct|nov|dic)$/i.test(keyNorm)) {
+    const mesCap = keyNorm.charAt(0).toUpperCase() + keyNorm.slice(1).toLowerCase();
+    // Asumir año actual (2025)
+    return mesCap + '-25';
+  }
+  
+  // Formato: "1-25" o "01-25" (número de mes - año)
+  const numMesMatch = keyNorm.match(/^(\d{1,2})-(\d{2,4})$/);
+  if(numMesMatch) {
+    const mesNum = parseInt(numMesMatch[1]);
+    const anio = String(numMesMatch[2]).length === 4 ? numMesMatch[2].slice(-2) : numMesMatch[2];
+    if(mesNum >= 1 && mesNum <= 12) {
+      return MESES[mesNum - 1] + '-' + anio;
+    }
+  }
+  
+  // Formato: "M25" (M=Ene, F=Feb, etc - notación compacta)
+  const inicialMatch = keyNorm.match(/^([efmajsond])\d{2}$/i);
+  if(inicialMatch) {
+    const iniciales = { 'e': 0, 'f': 1, 'm': 2, 'a': 3, 'm': 4, 'j': 5, 'j': 6, 'a': 7, 's': 8, 'o': 9, 'n': 10, 'd': 11 };
+    const mesNum = iniciales[inicialMatch[1].toLowerCase()];
+    const anio = keyNorm.slice(-2);
+    if(mesNum !== undefined) {
+      return MESES[mesNum] + '-' + anio;
+    }
+  }
+  
+  // Si no coincide con ningún formato, devolver vacío
+  return '';
+}
+
+// Función auxiliar: buscar una columna por variantes de nombre
+function buscarColumna(obj, variantes) {
+  const keys = Object.keys(obj);
+  for(let variante of variantes) {
+    const varianteLower = variante.toLowerCase().trim();
+    const keyEncontrada = keys.find(k => {
+      const kLower = k.toLowerCase().trim();
+      return kLower === varianteLower || kLower.replace(/\s+/g, ' ') === varianteLower.replace(/\s+/g, ' ');
+    });
+    if(keyEncontrada) return keyEncontrada;
+  }
+  return null;
+}
+
+// Función: Calcular Ventas Proyectadas por mes basado en "Inicio de Venta Proy." + "Precio Real"
+function calcularVentasProyectadasPorMes(rawProyData) {
+  const ventasProyectadasMes = {};
+  const fp = document.getElementById('fil-proyecto').value;
+  
+  if(!rawProyData || rawProyData.length === 0) return ventasProyectadasMes;
+  
+  rawProyData.forEach(r => {
+    const proyecto = str(r['Proyecto']) || str(r['PROYECTO']) || '';
+    if(fp && proyecto !== fp) return;
+    
+    // Buscar columnas con variantes de nombres para fecha de inicio de venta
+    const colInicioVenta = buscarColumna(r, [
+      'Inicio de Venta Proy.',
+      'INICIO DE VENTA PROY.',
+      'Inicio de Venta Proyectado',
+      'INICIO DE VENTA PROYECTADO',
+      'Inicio de Venta',
+      'INICIO DE VENTA',
+      'Inicio Venta',
+      'INICIO VENTA',
+      'Fecha Inicio Venta',
+      'FECHA INICIO VENTA',
+      'Fecha Inicio',
+      'FECHA INICIO'
+    ]);
+    
+    // Buscar columnas con variantes para precio real
+    const colPrecioReal = buscarColumna(r, [
+      'Precio Real',
+      'PRECIO REAL',
+      'Precio Venta Real',
+      'PRECIO VENTA REAL',
+      'Precio',
+      'PRECIO',
+      'Valor Real',
+      'VALOR REAL',
+      'Valor Venta',
+      'VALOR VENTA',
+      'Precio Unitario',
+      'PRECIO UNITARIO'
+    ]);
+    
+    if(colInicioVenta && colPrecioReal) {
+      const inicioVenta = str(r[colInicioVenta]).trim();
+      const precioReal = num(r[colPrecioReal]);
+      
+      if(inicioVenta && precioReal > 0) {
+        // Normalizar el formato del mes
+        let keyNorm = normalizarMesKey(inicioVenta);
+        if(keyNorm && keyNorm !== inicioVenta) { // Solo si se logró normalizar
+          ventasProyectadasMes[keyNorm] = (ventasProyectadasMes[keyNorm] || 0) + precioReal;
+        }
+      }
+    }
+  });
+  
+  console.log('Ventas proyectadas por mes:', ventasProyectadasMes); // Debug
+  return ventasProyectadasMes;
+}
+
+// Función: Calcular Proyección de Ingresos por mes
+// Para NO VENDIDO: sumar columnas de meses
+// Para VENDIDO: sumar desde Cronograma
+function calcularProyeccionIngresosPorMes(rawProyData, rawCronData) {
+  const ingresosProyectadosMes = {};
+  const fp = document.getElementById('fil-proyecto').value;
+  
+  // ─ DETECTAR COLUMNAS DE MESES EN PROY_FLUJO ─
+  let colsMes = [];
+  if(rawProyData && rawProyData.length > 0){
+    const primerReg = rawProyData[0];
+    const mesesPatrones = [
+      // Formato: Xxx-XX (Ene-25, Feb-26, etc)
+      /^(ene|feb|mar|abr|may|jun|jul|ago|set|sep|oct|nov|dic)-\d{2}$/i,
+      // Formato: Xxx-XXXX (Enero-2025, etc)
+      /^(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)-\d{4}$/i,
+      // Formato: Mes (enero, febrero, etc)
+      /^(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)$/i,
+      // Formato: Número mes-año (1-25, 2-25, etc)
+      /^\d{1,2}-\d{2}$/,
+      // Formato: M25, F25, etc (inicial mes + año)
+      /^[a-z]\d{2}$/i
+    ];
+    
+    colsMes = Object.keys(primerReg).filter(col => {
+      const lower = String(col).toLowerCase().trim();
+      return mesesPatrones.some(patron => patron.test(lower));
+    });
+  }
+  
+  // ─ BUSCAR COLUMNA DE SITUACIÓN/ESTADO EN PROY_FLUJO ─
+  const colEstatusSample = rawProyData && rawProyData.length > 0 ? rawProyData[0] : {};
+  const colEstatus = buscarColumna(colEstatusSample, [
+    'Estatus',
+    'ESTATUS',
+    'Estado',
+    'ESTADO',
+    'Situacion',
+    'SITUACION',
+    'Situación',
+    'SITUACIÓN',
+    'Estado Venta',
+    'ESTADO VENTA',
+    'Estado de Venta',
+    'ESTADO DE VENTA'
+  ]);
+  
+  // ─ PROCESAR UNIDADES NO VENDIDO: SUMAR COLUMNAS DE MESES ─
+  if(rawProyData && rawProyData.length > 0) {
+    rawProyData.forEach(r => {
+      const proyecto = str(r['Proyecto']) || str(r['PROYECTO']) || '';
+      if(fp && proyecto !== fp) return;
+      
+      // Obtener estado/situación
+      const estatus = colEstatus ? str(r[colEstatus]).toUpperCase().trim() : '';
+      
+      // Solo procesar si NO es VENDIDO (para VENDIDO usaremos cronograma)
+      if(estatus === 'VENDIDO') return;
+      
+      // Sumar todos los ingresos de columnas de meses
+      colsMes.forEach(col => {
+        const ingreso = num(r[col]) || 0;
+        if(ingreso > 0) {
+          let keyNorm = normalizarMesKey(col);
+          ingresosProyectadosMes[keyNorm] = (ingresosProyectadosMes[keyNorm] || 0) + ingreso;
+        }
+      });
+    });
+  }
+  
+  // ─ PROCESAR UNIDADES VENDIDO: SUMAR DESDE CRONOGRAMA ─
+  if(rawCronData && rawCronData.length > 0) {
+    rawCronData.forEach(r => {
+      const proyecto = str(r['PROYECTO']) || str(r['Proyecto']) || '';
+      if(fp && proyecto !== fp) return;
+      
+      // Buscar columna de estado del cronograma
+      const colEstadoCron = buscarColumna(r, [
+        'ESTADO',
+        'Estado',
+        'Estatus',
+        'ESTATUS',
+        'Estado Cuota',
+        'ESTADO CUOTA',
+        'Estado del Pago',
+        'ESTADO DEL PAGO'
+      ]);
+      
+      const estado = colEstadoCron ? str(r[colEstadoCron]).toUpperCase().trim() : '';
+      
+      // Solo procesar cuotas que NO estén pagadas
+      if(estado && (estado === 'PAGADO' || estado === 'PAID')) return;
+      
+      // Extraer mes y año
+      const colMes = buscarColumna(r, ['Mes', 'MES', 'Mes Cuota', 'MES CUOTA', 'Mes de Pago', 'MES DE PAGO']);
+      const colAño = buscarColumna(r, ['Año', 'AÑO', 'Año Cuota', 'AÑO CUOTA', 'Año de Pago', 'AÑO DE PAGO', 'Año Proyectado', 'AÑO PROYECTADO']);
+      const colMonto = buscarColumna(r, ['Monto Cuota', 'MONTO CUOTA', 'Monto', 'MONTO', 'Valor Cuota', 'VALOR CUOTA']);
+      
+      const mes = colMes ? num(r[colMes]) : 0;
+      const anio = colAño ? num(r[colAño]) : 0;
+      const monto = colMonto ? num(r[colMonto]) : 0;
+      
+      if(mes >= 1 && mes <= 12 && anio > 1990 && monto > 0) {
+        const key = MESES[mes-1] + '-' + String(anio).slice(-2);
+        ingresosProyectadosMes[key] = (ingresosProyectadosMes[key] || 0) + monto;
+      }
+    });
+  }
+  
+  console.log('Ingresos proyectados por mes:', ingresosProyectadosMes); // Debug
+  return ingresosProyectadosMes;
+}
+
+function renderProyIngresos(){
+  if(!rawProy || rawProy.length === 0){
+    document.getElementById('proyingresos-content').innerHTML = 
+      '<div class="estado"><div class="estado-icon">⚠️</div><div class="estado-msg">No se encontraron datos de proyección de ingresos.<br>Asegúrate que la hoja "Proy_Flujo" exista y esté pública.</div></div>';
+    return;
+  }
+
+  // ── PROCESAR DATOS REALES (INGRESOS ACTUALES) ────────────────────
+  const ingresosRealesMes = {};
+  
+  rawAB.forEach(r => {
+    const proy = str(r['PROYECTO']);
+    const mes = num(r['Mes']) || num(r['Mes2']);
+    const anio = num(r['Año']) || num(r['Año3']);
+    const monto = (num(r['INGRESO S/']) || 0) + (num(r['INGRESO US$']) || 0) * (num(r['TC']) || TC);
+    
+    if(mes >= 1 && mes <= 12 && anio > 1990 && monto > 0){
+      const key = MESES[mes-1] + '-' + String(anio).slice(-2);
+      ingresosRealesMes[key] = (ingresosRealesMes[key] || 0) + monto;
+    }
+  });
+
+  // ── PROCESAR DATOS PROYECTADOS (INGRESOS POR MES EN PROY_FLUJO) ─────
+  const ingresosProyectadosMes = calcularProyeccionIngresosPorMes(rawProy, rawCron);
+
+  // ── OBTENER MESES A MOSTRAR ────────────────────────────────────────
+  const mesOrder = ['Set-25','Oct-25','Nov-25','Dic-25','Ene-26','Feb-26','Mar-26','Abr-26','May-26','Jun-26','Jul-26','Ago-26'];
+  const mesesActivos = [...new Set([...Object.keys(ingresosRealesMes), ...Object.keys(ingresosProyectadosMes)])]
+    .filter(k => mesOrder.includes(k))
+    .sort((a,b) => mesOrder.indexOf(a) - mesOrder.indexOf(b));
+
+  // ── CALCULAR RESUMEN Y ANÁLISIS ────────────────────────────────────
+  const totalReal = Object.values(ingresosRealesMes).reduce((a,b) => a+b, 0);
+  const totalProyectado = Object.values(ingresosProyectadosMes).reduce((a,b) => a+b, 0);
+  const diferenciaIngr = totalReal - totalProyectado;
+  const diferenciaIngrPercent = totalProyectado > 0 ? (diferenciaIngr / totalProyectado * 100) : 0;
+
+  // ── CALCULAR VENTAS PROYECTADAS ────────────────────────────────────
+  const ventasProyectadasMes = calcularVentasProyectadasPorMes(rawProy);
+  const totalVentasProyectadas = Object.values(ventasProyectadasMes).reduce((a,b) => a+b, 0);
+  const ventasProyectadasMesesActivos = mesesActivos.filter(k => ventasProyectadasMes[k] || false);
+
+  // Análisis de desempeño de ingresos
+  let analisisTexto = '';
+  let analisisClase = 'ok';
+  
+  if(diferenciaIngrPercent >= 10){
+    analisisTexto = `✓ Ingresos <strong>superando proyección ${Math.abs(diferenciaIngrPercent).toFixed(1)}%</strong>. Cobranza excelente.`;
+    analisisClase = 'ok';
+  } else if(diferenciaIngrPercent >= 0){
+    analisisTexto = `✓ Ingresos alineados con proyección (${diferenciaIngrPercent.toFixed(1)}% sobre proyectado).`;
+    analisisClase = 'ok';
+  } else if(diferenciaIngrPercent >= -10){
+    analisisTexto = `⚠ Ingresos ligeramente bajo proyección: ${Math.abs(diferenciaIngrPercent).toFixed(1)}%. Revisar cobranza.`;
+    analisisClase = 'warn';
+  } else {
+    analisisTexto = `✗ Ingresos significativamente bajo proyección: ${Math.abs(diferenciaIngrPercent).toFixed(1)}% de diferencia. Acción inmediata requerida.`;
+    analisisClase = 'danger';
+  }
+
+  let html = `
+    <div class="sec-label">Comparativo: Ventas y Proyecciones</div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-l">Ventas proyectadas (total)</div>
+        <div class="kpi-v ${totalVentasProyectadas > 0 ? 'warn' : 'danger'}" style="font-size:15px">${fmt(totalVentasProyectadas)}</div>
+        <div class="kpi-s">Meta de ventas</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-l">Ingresos proyectados (total)</div>
+        <div class="kpi-v warn" style="font-size:15px">${fmt(totalProyectado)}</div>
+        <div class="kpi-s">Meta de ingresos</div>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:14px">Comparativo: Ingresos Reales vs Proyectados</div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-l">Ingresos reales (total)</div>
+        <div class="kpi-v ok" style="font-size:15px">${fmt(totalReal)}</div>
+        <div class="kpi-s">Cobrado a la fecha</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-l">Ingresos proyectados (total)</div>
+        <div class="kpi-v warn" style="font-size:15px">${fmt(totalProyectado)}</div>
+        <div class="kpi-s">Meta de ingresos</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid" style="margin-top:0">
+      <div class="kpi">
+        <div class="kpi-l">Diferencia (ingreso)</div>
+        <div class="kpi-v ${diferenciaIngr >= 0 ? 'ok' : 'danger'}" style="font-size:15px">${fmt(diferenciaIngr)}</div>
+        <div class="kpi-s">${diferenciaIngrPercent >= 0 ? '+' : ''}${diferenciaIngrPercent.toFixed(1)}%</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-l">Diferencia (promedio/mes)</div>
+        <div class="kpi-v ${diferenciaIngr >= 0 ? 'ok' : 'danger'}" style="font-size:15px">${fmt(mesesActivos.length > 0 ? diferenciaIngr / mesesActivos.length : 0)}</div>
+        <div class="kpi-s">Por mes</div>
+      </div>
+    </div>
+
+    <div class="alerta-card" style="background:var(--${analisisClase === 'ok' ? 'verde' : analisisClase === 'warn' ? 'amber' : 'rojo'}-cl); border:1px solid ${analisisClase === 'ok' ? '#D1F2E3' : analisisClase === 'warn' ? '#FAC775' : '#F7C1C1'}; margin-top:14px">
+      <div class="alerta-hdr" style="background:var(--${analisisClase === 'ok' ? 'verde' : analisisClase === 'warn' ? 'amber' : 'rojo'})">
+        <div style="color:#fff;font-weight:600;font-size:12px">Análisis de cobranza y flujo de caja</div>
+      </div>
+      <div style="padding:12px 14px; color:var(--${analisisClase === 'ok' ? 'verde' : analisisClase === 'warn' ? 'amber' : 'rojo'})">
+        ${analisisTexto}
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:14px">Flujo de ingresos mes a mes</div>
+    <div class="chart-card">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#1D9E75"></span>Ingresos reales</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#FF9500"></span>Proyectados</span>
+      </div>
+      <div class="ch" style="height:250px">
+        <canvas id="ch-proy-ingresos" role="img" aria-label="Flujo de ingresos: real vs proyectado">Proyección de ingresos</canvas>
+      </div>
+    </div>
+
+    <div class="tbl-wrap" style="margin-top:14px">
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Mes</th>
+              <th style="text-align:right">Ventas proy.</th>
+              <th style="text-align:right">Ingresos reales</th>
+              <th style="text-align:right">Proyectados</th>
+              <th style="text-align:right">Diferencia</th>
+              <th style="text-align:right">% Cumplimiento</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  mesesActivos.forEach(mes => {
+    const vProy = ventasProyectadasMes[mes] || 0;
+    const real = ingresosRealesMes[mes] || 0;
+    const proy = ingresosProyectadosMes[mes] || 0;
+    const diff = real - proy;
+    const cumplimiento = proy > 0 ? ((real / proy) * 100).toFixed(1) : 0;
+    
+    html += `
+      <tr>
+        <td style="font-weight:600">${mes}</td>
+        <td style="text-align:right;color:#8B7500;font-weight:500">${fmt(vProy)}</td>
+        <td style="text-align:right;color:#1D9E75;font-weight:500">${fmt(real)}</td>
+        <td style="text-align:right;color:#FF9500;font-weight:500">${fmt(proy)}</td>
+        <td style="text-align:right;font-weight:600;color:${diff >= 0 ? '#3B6D11' : '#A32D2D'}">${fmt(diff)}</td>
+        <td style="text-align:right;font-weight:600;color:${cumplimiento >= 100 ? '#3B6D11' : cumplimiento >= 80 ? '#854F0B' : '#A32D2D'}">${cumplimiento}%</td>
+      </tr>
+    `;
+  });
+
+  html += `
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('proyingresos-content').innerHTML = html;
+
+  // ── DESTRUIR CHART PREVIO ──────────────────────────────────────────
+  if(chartsCreados['ch-proy-ingresos']) { chartsCreados['ch-proy-ingresos'].destroy(); delete chartsCreados['ch-proy-ingresos']; }
+
+  const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc = isDark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.05)';
+  const tc = isDark ? '#aaa' : '#888';
+
+  // ── GRÁFICO: FLUJO DE INGRESOS ────────────────────────────────────
+  if(mesesActivos.length){
+    chartsCreados['ch-proy-ingresos'] = new Chart(document.getElementById('ch-proy-ingresos'), {
+      type: 'bar',
+      data: {
+        labels: mesesActivos,
+        datasets: [
+          { label: 'Ingresos reales', data: mesesActivos.map(k => Math.round(ingresosRealesMes[k] || 0)), backgroundColor: '#1D9E75', borderRadius: 3, borderSkipped: false },
+          { label: 'Proyectados', data: mesesActivos.map(k => Math.round(ingresosProyectadosMes[k] || 0)), backgroundColor: '#FF9500', borderRadius: 3, borderSkipped: false }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'S/ ' + c.parsed.y.toLocaleString('es-PE') } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: tc, font: { size: 10 }, autoSkip: false, maxRotation: 45 } },
+          y: { grid: { color: gc }, ticks: { color: tc, font: { size: 10 }, callback: v => 'S/ ' + (v/1000).toFixed(0) + 'k' } }
+        }
+      }
+    });
+  }
+}
+
 // ════════════════════════════════════════════════════════════
 function renderProyectos(){
   const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
@@ -642,7 +1503,6 @@ function renderCobranzaNueva(){
     'Directo': { cobrado: 0, porCobrar: 0, contar: 0 },
     'Contado': { cobrado: 0, porCobrar: 0, contar: 0 },
     'Hipotecario Postergado': { cobrado: 0, porCobrar: 0, contar: 0 },
-    'Ahorro Casa': { cobrado: 0, porCobrar: 0, contar: 0 },
     'Por Confirmar': { cobrado: 0, porCobrar: 0, contar: 0 }
   };
 
