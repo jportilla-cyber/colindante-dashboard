@@ -274,16 +274,36 @@ function pillHtml(s){
 // ── Fetch Google Sheets ──────────────────────────────────────
 async function fetchSheet(sheetName){
   const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
-  const res = await fetch(url);
-  const text = await res.text();
-  const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
-  if(!json.table||!json.table.rows) return [];
-  const cols = json.table.cols.map(c=>c.label||'');
-  return json.table.rows.map(r=>{
-    const obj={};
-    r.c.forEach((cell,i)=>{ obj[cols[i]] = cell ? (cell.v!==null&&cell.v!==undefined ? cell.v : '') : ''; });
-    return obj;
-  });
+  console.log(`⏳ Cargando hoja: ${sheetName}`);
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    
+    // Verificar si es una respuesta válida
+    if (!text.includes('google.visualization.Query.setResponse')) {
+      console.error(`❌ Hoja "${sheetName}" no encontrada o Sheet no es público. Respuesta:`, text.substring(0, 200));
+      return [];
+    }
+    
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+    
+    if(!json.table||!json.table.rows) {
+      console.warn(`⚠️ La hoja "${sheetName}" está vacía`);
+      return [];
+    }
+    
+    const cols = json.table.cols.map(c=>c.label||'');
+    console.log(`✅ Hoja "${sheetName}": ${json.table.rows.length} filas, columnas: ${cols.join(', ')}`);
+    
+    return json.table.rows.map(r=>{
+      const obj={};
+      r.c.forEach((cell,i)=>{ obj[cols[i]] = cell ? (cell.v!==null&&cell.v!==undefined ? cell.v : '') : ''; });
+      return obj;
+    });
+  } catch(e) {
+    console.error(`❌ Error al cargar hoja "${sheetName}":`, e);
+    return [];
+  }
 }
 
 // ── Cargar datos ─────────────────────────────────────────────
@@ -291,6 +311,27 @@ async function cargarDatos(){
   document.getElementById('spin-icon').classList.add('spinning');
   try{
     [rawMC, rawAB, rawCron] = await Promise.all([fetchSheet(SHEET_MC), fetchSheet(SHEET_AB), fetchSheet(SHEET_CRON)]);
+    
+    // ═══ DEBUG: Mostrar información de carga ═══
+    console.group('📊 DATOS CARGADOS');
+    console.log('Master_Clientes filas:', rawMC.length);
+    if(rawMC.length > 0) {
+      console.log('  Columnas encontradas:', Object.keys(rawMC[0]));
+      console.log('  Primera fila:', rawMC[0]);
+      console.log('  Sample VALOR S/:', rawMC.slice(0,5).map(r => ({cliente: r['Nombre del Cliente'], valor: r['VALOR S/'], ingresos: r['Ingresos  S/.'], situacion: r['SITUACION']})));
+    }
+    console.log('Abonos filas:', rawAB.length);
+    if(rawAB.length > 0) {
+      console.log('  Columnas encontradas:', Object.keys(rawAB[0]));
+      console.log('  Primera fila:', rawAB[0]);
+    }
+    console.log('Cronograma filas:', rawCron.length);
+    if(rawCron.length > 0) {
+      console.log('  Columnas encontradas:', Object.keys(rawCron[0]));
+      console.log('  Primera fila:', rawCron[0]);
+    }
+    console.groupEnd();
+    
     // Poblar filtros
     const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
     const inmuebles=[...new Set(rawMC.map(r=>str(r['INMUEBLE'])).filter(Boolean))].sort();
