@@ -990,11 +990,11 @@ function renderCartera(){
   filtradoCron.forEach(r => {
     const nombre = str(r['Nombre del Cliente']);
     if (clientes[nombre]) {
-      const tipoCredito = str(r['Tipo de Credito']) || str(r['Tipo Credito']);
+      const tipoConcepto = str(r['Concepto']) || str(r['CONCEPTO']);
       const estado = str(r['ESTADO']);
       
       // Validamos que sea de tipo "Cuota Inicial" y que esté pendiente ("Por Pagar")
-      if (tipoCredito.trim().toLowerCase() === 'cuota inicial' && estado.trim().toLowerCase() === 'por pagar') {
+      if (tipoConcepto.trim().toLowerCase() === 'cuota inicial' && estado.trim().toLowerCase() === 'por pagar') {
         clientes[nombre].cuotaInicialPend += num(r['Monto Cuota']);
       }
     }
