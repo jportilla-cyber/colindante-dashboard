@@ -730,11 +730,11 @@ function renderResumen(){
   const valVend = inmuebles.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['VALOR S/']),0);
   const valVendidoSolo = inmuebles.filter(r=>str(r['SITUACION'])==='VENDIDO').reduce((a,r)=>a+num(r['VALOR S/']),0);
 
-  // Desestimientos: filas en Abonos cuyo campo Detalle contiene "desestimiento" (insensible a mayúsculas)
+  // Desestimientos: filas en Abonos cuyo campo DETALLE contiene "desestimiento"
   // Solo filtrado por proyecto global
   const desestimientos = rawAB.filter(r => {
     if(fp && str(r['PROYECTO']) !== fp) return false;
-    return str(r['Detalle']).toLowerCase().includes('desestimiento');
+    return str(r['DETALLE']).toLowerCase().includes('desestimiento');
   }).length;
 
   document.getElementById('resumen-content').innerHTML=`
