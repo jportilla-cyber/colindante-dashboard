@@ -715,6 +715,7 @@ function setTipoCredFiltro(valor, btn){
 // PÁGINA 1: RESUMEN
 // ════════════════════════════════════════════════════════════
 function renderResumen(){
+  const fp = document.getElementById('fil-proyecto').value;
   const inmuebles = filtrado;
   const total   = inmuebles.length;
   const vendido = inmuebles.filter(r=>str(r['SITUACION'])==='VENDIDO').length;
@@ -728,6 +729,13 @@ function renderResumen(){
   const xCobrar = activos.reduce((a,r)=>a+num(r['Por Pagar  S/.']),0);
   const valVend = inmuebles.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['VALOR S/']),0);
   const valVendidoSolo = inmuebles.filter(r=>str(r['SITUACION'])==='VENDIDO').reduce((a,r)=>a+num(r['VALOR S/']),0);
+
+  // Desestimientos: filas en Abonos cuyo campo Detalle contiene "desestimiento" (insensible a mayúsculas)
+  // Solo filtrado por proyecto global
+  const desestimientos = rawAB.filter(r => {
+    if(fp && str(r['PROYECTO']) !== fp) return false;
+    return str(r['Detalle']).toLowerCase().includes('desestimiento');
+  }).length;
 
   document.getElementById('resumen-content').innerHTML=`
     <div class="hero-banner">
@@ -763,6 +771,7 @@ function renderResumen(){
     </div>
     <div class="kpi-grid" style="margin-top:0">
       <div class="kpi accent-blue"><div class="kpi-l">Unidades activas</div><div class="kpi-v">${activos.length}</div><div class="kpi-s">vendidos + separados</div></div>
+      <div class="kpi accent-rojo"><div class="kpi-l">Desestimientos</div><div class="kpi-v danger">${desestimientos}</div><div class="kpi-s">registros en abonos</div></div>
     </div>
   `;
 }
