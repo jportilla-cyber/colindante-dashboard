@@ -1021,14 +1021,15 @@ function renderGraficos(){
   });
 
   // ── Acumulados ────────────────────────────────────────────
+  const mesActualKey = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
   let acVRU=0,acVRealS=0,acVProyU=0,acVProyS=0,acIRealS=0,acIProyS=0;
   const acVRealUArr=[],acVProyUArr=[],acVRealSArr=[],acVProySArr=[],acIRealArr=[],acIProyArr=[];
   activeKeys.forEach(k => {
-    acVRU  += ventasRealesU[k]||0;  acVRealUArr.push(acVRU);
+    acVRU  += ventasRealesU[k]||0;  acVRealUArr.push(k <= mesActualKey ? acVRU : null);
     acVProyU += ventasProyU[k]||0;  acVProyUArr.push(acVProyU);
-    acVRealS += ventasRealesS[k]||0; acVRealSArr.push(Math.round(acVRealS));
+    acVRealS += ventasRealesS[k]||0; acVRealSArr.push(k <= mesActualKey ? Math.round(acVRealS) : null);
     acVProyS += ventasProyS[k]||0;  acVProySArr.push(Math.round(acVProyS));
-    acIRealS += ingresosRealesS[k]||0; acIRealArr.push(Math.round(acIRealS));
+    acIRealS += ingresosRealesS[k]||0; acIRealArr.push(k <= mesActualKey ? Math.round(acIRealS) : null);
     acIProyS += ingresosProyS[k]||0;  acIProyArr.push(Math.round(acIProyS));
   });
 
@@ -1221,8 +1222,8 @@ function renderGraficos(){
     data:{
       labels: activeLabels,
       datasets:[
-        {label:'Meta Acum.',  data:acMetaVUArr,  borderColor:C.acumMeta, backgroundColor:C.acumMeta+'22', fill:true, tension:0.3, pointRadius:3},
-        {label:'Real Acum.',  data:acVRealUArr,  borderColor:C.acumReal,  backgroundColor:C.acumReal+'22',  fill:true, tension:0.3, pointRadius:3},
+        {label:'Meta Acum.',  data:acMetaVUArr,  borderColor:C.acumMeta, backgroundColor:C.acumMeta+'22', fill:true, tension:0.3, pointRadius:3, spanGaps:false},
+        {label:'Real Acum.',  data:acVRealUArr,  borderColor:C.acumReal,  backgroundColor:C.acumReal+'22',  fill:true, tension:0.3, pointRadius:3, spanGaps:false},
       ]
     },
     options: baseOpts('u')
@@ -1234,8 +1235,8 @@ function renderGraficos(){
     data:{
       labels: activeLabels,
       datasets:[
-        {label:'Ingresos Meta Acum.', data:acMetaISArr, borderColor:C.acumMeta, backgroundColor:C.acumMeta+'22', fill:true, tension:0.3, pointRadius:3},
-        {label:'Ingresos Real Acum.',  data:acIRealArr,  borderColor:C.acumReal,  backgroundColor:C.acumReal+'22',  fill:true, tension:0.3, pointRadius:3},
+        {label:'Ingresos Meta Acum.', data:acMetaISArr, borderColor:C.acumMeta, backgroundColor:C.acumMeta+'22', fill:true, tension:0.3, pointRadius:3, spanGaps:false},
+        {label:'Ingresos Real Acum.',  data:acIRealArr,  borderColor:C.acumReal,  backgroundColor:C.acumReal+'22',  fill:true, tension:0.3, pointRadius:3, spanGaps:false},
       ]
     },
     options: baseOpts('s')
