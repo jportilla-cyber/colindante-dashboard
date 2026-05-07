@@ -162,7 +162,7 @@ body{
 
 /* ── HEADER ── */
 .hdr{
-  background:linear-gradient(135deg, #0F2A14 0%, #1A3D20 100%);
+  background:linear-gradient(135deg, #0b0720 0%, #1a1b39 100%);
   padding:14px 16px 12px;
   position:sticky;top:0;z-index:100;
   border-bottom:1px solid rgba(255,255,255,.1);
@@ -578,10 +578,9 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
 
 <div class="nav">
   <button class="tab active" onclick="mostrarPagina('resumen',this)">Resumen</button>
-  <button class="tab" onclick="mostrarPagina('proyectos',this)">Proyectos</button>
   <button class="tab" onclick="mostrarPagina('graficos',this)">Gráficos</button>
   <button class="tab" onclick="mostrarPagina('cobranza',this)">Cobranza</button>
-  <button class="tab" onclick="mostrarPagina('cronograma',this)">Cronograma de Cuotas</button>
+  <button class="tab" onclick="mostrarPagina('cronograma',this)">Cuotas</button>
   <button class="tab" onclick="mostrarPagina('cartera',this)">Cartera</button>
   <button class="tab" onclick="mostrarPagina('proyecciones',this)">Proyecciones</button>
 </div>
@@ -611,10 +610,7 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
 
 <div class="page active" id="page-resumen">
   <div id="resumen-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
-</div>
-
-<div class="page" id="page-proyectos">
-  <div id="proyectos-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+  <div id="proyectos-content"></div>
 </div>
 
 <div class="page" id="page-graficos">
@@ -886,6 +882,7 @@ function renderResumen(){
       <div class="kpi accent-rojo"><div class="kpi-l">Desestimientos</div><div class="kpi-v danger">${desestimientos}</div><div class="kpi-s">registros en abonos</div></div>
     </div>
   `;
+  renderProyectos();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -896,7 +893,7 @@ function renderProyectos(){
   const fp=document.getElementById('fil-proyecto').value;
   const lista=fp?[fp]:proyectos;
 
-  let html='';
+  let html='<div class="sec-label" style="margin-top:24px">Detalle por Proyecto</div>';
   lista.forEach(p=>{
     const dptos=filtrado.filter(r=>str(r['PROYECTO'])===p);
     if(!dptos.length) return;
@@ -909,39 +906,50 @@ function renderProyectos(){
     const ingresos=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Ingresos  S/.']),0);
     const xCobrar=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Por Pagar  S/.']),0);
     const valVendidoProyecto=filtrado.filter(r=>str(r['PROYECTO'])===p&&str(r['SITUACION'])==='VENDIDO').reduce((a,r)=>a+num(r['VALOR S/']),0);
+    const desest=rawAB.filter(r=>str(r['PROYECTO'])===p&&str(r['DETALLE']).toLowerCase().includes('desestimiento')).length;
+
+    const accentColor = pct>=10 ? 'accent-verde' : pct>=5 ? 'accent-amber' : 'accent-rojo';
 
     html+=`
-    <div style="margin-bottom:4px">
-      <div class="sec-label">${p}</div>
-      <div class="kpi-grid">
-        <div class="kpi"><div class="kpi-l">Total inmuebles</div><div class="kpi-v">${t}</div></div>
-        <div class="kpi"><div class="kpi-l">% Comercializado</div><div class="kpi-v ${pct>=10?'ok':pct>=5?'warn':'danger'}" style="font-size:18px">${pct}%</div></div>
+    <div style="margin-bottom:14px">
+      <!-- Header del proyecto -->
+      <div style="background:var(--surface2);border-radius:var(--radius) var(--radius) 0 0;padding:12px 14px;border:1px solid var(--border);border-bottom:none;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:700;color:var(--text);letter-spacing:-.01em">${p}</span>
+        <span style="font-size:11px;font-weight:700;color:${pct>=10?'var(--verde)':pct>=5?'var(--amber)':'var(--rojo)'}">
+          ${pct}% comercializado
+        </span>
       </div>
-      <div class="kpi-grid" style="margin-top:0">
-        <div class="kpi"><div class="kpi-l">Vendidos</div><div class="kpi-v ok">${v}</div></div>
-        <div class="kpi"><div class="kpi-l">Separados</div><div class="kpi-v warn">${s}</div></div>
-      </div>
-      <div class="kpi-grid" style="margin-top:0">
-        <div class="kpi"><div class="kpi-l">Por vender</div><div class="kpi-v">${pv}</div></div>
-        <div class="kpi"><div class="kpi-l">Bloqueados</div><div class="kpi-v ${b>0?'danger':''}">${b}</div></div>
-      </div>
-      <div class="prog-wrap" style="margin-top:0;margin-bottom:0">
-        <div class="prog-row">
-          <span class="prog-label" style="font-size:11px">Avance comercial</span>
-          <span class="prog-pct">${pct}%</span>
-        </div>
+
+      <!-- Barra de avance -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-top:none;padding:8px 14px 12px">
         <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(pct,0.5)}%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text3)">
+          <span>Vendidos: <strong style="color:var(--verde)">${v}</strong></span>
+          <span>Separados: <strong style="color:var(--amber)">${s}</strong></span>
+          <span>Por vender: <strong style="color:var(--text2)">${pv}</strong></span>
+          <span>Bloqueados: <strong style="color:${b>0?'var(--rojo)':'var(--text3)'}">${b}</strong></span>
+        </div>
       </div>
-      <div class="kpi-grid" style="margin-top:9px;margin-bottom:16px">
-        <div class="kpi"><div class="kpi-l">Valor vendido</div><div class="kpi-v ok" style="font-size:14px">${fmt(valVendidoProyecto)}</div></div>
-        <div class="kpi"><div class="kpi-l">Ingresos</div><div class="kpi-v ok" style="font-size:14px">${fmt(ingresos)}</div></div>
+
+      <!-- KPIs financieros -->
+      <div class="kpi-grid" style="margin-top:0;border-radius:0;gap:1px">
+        <div class="kpi ${accentColor}" style="border-radius:0;border-top:none"><div class="kpi-l">Total inmuebles</div><div class="kpi-v">${t}</div></div>
+        <div class="kpi accent-verde" style="border-radius:0;border-top:none"><div class="kpi-l">Valor vendido</div><div class="kpi-v ok money">${fmt(valVendidoProyecto)}</div></div>
+        <div class="kpi accent-gold" style="border-radius:0;border-top:none"><div class="kpi-l">Ingresos recibidos</div><div class="kpi-v money" style="color:var(--gold)">${fmt(ingresos)}</div></div>
+        <div class="kpi accent-amber" style="border-radius:0;border-top:none"><div class="kpi-l">Por cobrar</div><div class="kpi-v warn money">${fmt(xCobrar)}</div></div>
       </div>
-      <div class="kpi-grid" style="margin-top:0;margin-bottom:16px">
-        <div class="kpi"><div class="kpi-l">Por cobrar</div><div class="kpi-v warn" style="font-size:14px">${fmt(xCobrar)}</div></div>
+
+      <!-- Desestimientos -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:11px;color:var(--text3)">Desestimientos</span>
+        <span style="font-size:16px;font-weight:700;color:${desest>0?'var(--rojo)':'var(--verde)'}">
+          ${desest} ${desest>0?'⚠️':'✓'}
+        </span>
       </div>
     </div>`;
   });
-  document.getElementById('proyectos-content').innerHTML=html||'<div class="empty">Sin datos para los filtros seleccionados</div>';
+
+  document.getElementById('proyectos-content').innerHTML = lista.length ? html : '';
 }
 
 // ════════════════════════════════════════════════════════════
