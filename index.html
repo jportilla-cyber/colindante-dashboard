@@ -596,9 +596,6 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
     <option value="BLOQUEADO">Bloqueado</option>
     <option value="POR VENDER">Por vender</option>
   </select>
-  <select id="fil-inmueble" onchange="aplicarFiltros()">
-    <option value="">Todos los inmuebles</option>
-  </select>
 </div>
 
 <div class="fil-cuota-wrap" id="fil-cuota-wrap" style="display:none">
@@ -645,6 +642,7 @@ const SHEET_AB = 'Abonos';
 const SHEET_CRON = 'Cronograma';
 const SHEET_PROY = 'Proy_Flujo';
 const SHEET_META = 'Meta';
+const SHEET_CMETA = 'Comercial_Meta';
 const TC = 3.477;
 
 // ── Tema claro/oscuro ────────────────────────────────────────
@@ -677,7 +675,7 @@ function applyChartDefaults(){
 }
 applyChartDefaults();
 
-let rawMC = [], rawAB = [], rawCron = [], rawProy = [], rawMeta = [], filtrado = [], filtradoCron = [];
+let rawMC = [], rawAB = [], rawCron = [], rawProy = [], rawMeta = [], rawCMeta = [], filtrado = [], filtradoCron = [];
 let filCuota = '';
 let filTipoCredito = '';
 let chartsCreados = {};
@@ -701,7 +699,7 @@ function pillHtml(s){
 
 // ── Fetch Google Sheets ──────────────────────────────────────
 async function fetchSheet(sheetName){
-  const headersParam = (sheetName === 'Proy_Flujo' || sheetName === 'Meta') ? '&headers=1' : '';
+  const headersParam = (sheetName === 'Proy_Flujo' || sheetName === 'Meta' || sheetName === 'Comercial_Meta') ? '&headers=1' : '';
   const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}${headersParam}`;
   console.log(`⏳ Cargando hoja: ${sheetName}`);
   try {
@@ -739,25 +737,20 @@ async function fetchSheet(sheetName){
 async function cargarDatos(){
   document.getElementById('spin-icon').classList.add('spinning');
   try{
-    [rawMC, rawAB, rawCron, rawProy, rawMeta] = await Promise.all([
+    [rawMC, rawAB, rawCron, rawProy, rawMeta, rawCMeta] = await Promise.all([
       fetchSheet(SHEET_MC), 
       fetchSheet(SHEET_AB), 
       fetchSheet(SHEET_CRON),
       fetchSheet(SHEET_PROY),
-      fetchSheet(SHEET_META)
+      fetchSheet(SHEET_META),
+      fetchSheet(SHEET_CMETA)
     ]);
     
     // Poblar filtros
     const proyectos=[...new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean))].sort();
-    const inmuebles=[...new Set(rawMC.map(r=>str(r['INMUEBLE'])).filter(Boolean))].sort();
-
     const selProy=document.getElementById('fil-proyecto');
     selProy.innerHTML='<option value="">Todos los proyectos</option>'+
       proyectos.map(p=>`<option value="${p}">${p}</option>`).join('');
-
-    const selInm=document.getElementById('fil-inmueble');
-    selInm.innerHTML='<option value="">Todos los inmuebles</option>'+
-      inmuebles.map(i=>`<option value="${i}">${i}</option>`).join('');
 
     aplicarFiltros();
     const ahora=new Date();
@@ -779,15 +772,16 @@ async function cargarDatos(){
 function aplicarFiltros(){
   const fp=document.getElementById('fil-proyecto').value;
   const fs=document.getElementById('fil-situacion').value;
-  const fi=document.getElementById('fil-inmueble').value;
+  // filtrado: solo Departamentos (excluye Estacionamiento y Deposito)
   filtrado=rawMC.filter(r=>{
+    if(str(r['INMUEBLE']) !== 'Departamento') return false;
     if(fp && str(r['PROYECTO'])!==fp) return false;
     if(fs && str(r['SITUACION'])!==fs) return false;
-    if(fi && str(r['INMUEBLE'])!==fi) return false;
     return true;
   });
-  // Filtrar cronograma por proyecto y situación (usa ESTADO VENTA en la hoja Proy. Ingresos)
+  // filtradoCron: solo Departamentos
   filtradoCron = rawCron.filter(r=>{
+    if(str(r['INMUEBLE']) !== 'Departamento') return false;
     if(fp && str(r['PROYECTO'])!==fp) return false;
     if(fs && str(r['ESTADO VENTA'])!==fs) return false;
     return true;
@@ -841,6 +835,7 @@ function renderResumen(){
   // Desestimientos: filas en Abonos cuyo campo DETALLE contiene "desestimiento"
   // Solo filtrado por proyecto global
   const desestimientos = rawAB.filter(r => {
+    if(str(r['DPTO']) === '') return false;
     if(fp && str(r['PROYECTO']) !== fp) return false;
     return str(r['DETALLE']).toLowerCase().includes('desestimiento');
   }).length;
@@ -906,7 +901,7 @@ function renderProyectos(){
     const ingresos=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Ingresos  S/.']),0);
     const xCobrar=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Por Pagar  S/.']),0);
     const valVendidoProyecto=filtrado.filter(r=>str(r['PROYECTO'])===p&&str(r['SITUACION'])==='VENDIDO').reduce((a,r)=>a+num(r['VALOR S/']),0);
-    const desest=rawAB.filter(r=>str(r['PROYECTO'])===p&&str(r['DETALLE']).toLowerCase().includes('desestimiento')).length;
+    const desest=rawAB.filter(r=>str(r['DPTO'])!==''&&str(r['PROYECTO'])===p&&str(r['DETALLE']).toLowerCase().includes('desestimiento')).length;
 
     const accentColor = pct>=10 ? 'accent-verde' : pct>=5 ? 'accent-amber' : 'accent-rojo';
 
@@ -962,6 +957,7 @@ function renderGraficos(){
   const isLight = document.body.classList.contains('light');
   const C = {
     ventas:    '#34C77B',
+    verde:     '#34C77B',
     ingresos:  '#C9A84C',
     proyVentas:'#4A90D9',
     proyIngr:  '#A78BFA',
@@ -1028,9 +1024,9 @@ function renderGraficos(){
     }
   });
 
-  // ── 2. Ingresos Reales mensuales (de rawAB) ───────────────
+  // ── 2. Ingresos Reales mensuales (de rawAB — solo Departamentos) ──
   const ingresosRealesS = {};
-  rawAB.forEach(r => {
+  rawAB.filter(r => str(r['DPTO']) !== '').forEach(r => {
     if(fp && str(r['PROYECTO'])!==fp) return;
     const m = num(r['Mes']), y = num(r['Año']);
     const monto = (num(r['INGRESO S/'])||0) + (num(r['INGRESO US$'])||0)*(num(r['TC'])||TC);
@@ -1163,7 +1159,7 @@ function renderGraficos(){
   const totalUVP = Object.values(ventasProyU).reduce((a,b)=>a+b,0);
 
   // ── Destruir charts previos ───────────────────────────────
-  ['ch-vr-ingr','ch-proy-ingr','ch-acum-unid','ch-acum-s'].forEach(id=>{
+  ['ch-vr-ingr','ch-proy-ingr','ch-comercial-meta','ch-acum-unid','ch-acum-s'].forEach(id=>{
     if(chartsCreados[id]){chartsCreados[id].destroy();delete chartsCreados[id];}
   });
 
@@ -1196,6 +1192,16 @@ function renderGraficos(){
         <span class="legend-item"><span class="legend-dot" style="background:${C.proyIngr}"></span>Ingresos Acum.</span>
       </div>
       <div class="ch" style="height:220px"><canvas id="ch-proy-ingr"></canvas></div>
+    </div>
+
+    <!-- Gráfico nuevo: Meta Comercial vs Real (Unidades acumuladas) -->
+    <div class="sec-label" style="margin-top:16px">Meta Comercial vs Real — Unidades Acumuladas</div>
+    <div class="chart-card">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#A78BFA"></span>Meta Comercial Acum.</span>
+        <span class="legend-item"><span class="legend-dot" style="background:${C.verde}"></span>Real Acum.</span>
+      </div>
+      <div class="ch" style="height:220px"><canvas id="ch-comercial-meta"></canvas></div>
     </div>
 
     <!-- Gráfico 3: Acumulado Unidades Vendidas Proy vs Real -->
@@ -1336,6 +1342,85 @@ function renderGraficos(){
       }
     });
   }
+
+  // ── Meta Comercial (rawCMeta) — acumulado de unidades por mes ──
+  const metaComercialU = {};
+  if(rawCMeta.length > 0) {
+    const colsFecha = Object.keys(rawCMeta[0])[0];
+    const colsProyecto = Object.keys(rawCMeta[0]).slice(1);
+
+    rawCMeta.forEach(r => {
+      let k = null;
+      const v = r[colsFecha];
+
+      // Caso 1: string tipo "Date(2026,3,1)" que devuelve gviz
+      if(typeof v === 'string' && v.startsWith('Date(')) {
+        const p = v.substring(5, v.length-1).split(',');
+        k = `${p[0]}-${String(parseInt(p[1])+1).padStart(2,'0')}`;
+      }
+      // Caso 2: string legible "abr-26"
+      else if(typeof v === 'string' && v.trim()) {
+        const meses = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
+        const parts = v.trim().toLowerCase().split('-');
+        const mesNum = meses[parts[0]];
+        let anio = parseInt(parts[1]);
+        if(mesNum && !isNaN(anio)) {
+          if(anio < 100) anio += 2000;
+          k = `${anio}-${String(mesNum).padStart(2,'0')}`;
+        }
+      }
+      // Caso 3: número (días desde 30-dic-1899, formato interno de Sheets)
+      else if(typeof v === 'number') {
+        const d = new Date((v - 25569) * 86400 * 1000);
+        k = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;
+      }
+
+      if(!k) return;
+
+      let total = 0;
+      colsProyecto.forEach(col => {
+        if(fp && col.trim() !== fp) return;
+        total += num(r[col]);
+      });
+      metaComercialU[k] = (metaComercialU[k] || 0) + total;
+    });
+    console.log('🔍 metaComercialU:', JSON.stringify(metaComercialU));
+  }
+
+  // Acumulado Meta Comercial
+  let acMCU = 0;
+  const acMCUArr = [];
+  activeKeys.forEach(k => {
+    acMCU += metaComercialU[k] || 0;
+    acMCUArr.push(acMCU);
+  });
+
+  // Chart Meta Comercial vs Real
+  chartsCreados['ch-comercial-meta'] = new Chart(document.getElementById('ch-comercial-meta'),{
+    type:'line',
+    data:{
+      labels: activeLabels,
+      datasets:[
+        {
+          label:'Meta Comercial Acum.',
+          data: acMCUArr,
+          borderColor:'#A78BFA',
+          backgroundColor:'#A78BFA22',
+          fill:true, tension:0.3, pointRadius:3,
+          borderDash:[5,3]
+        },
+        {
+          label:'Real Acum.',
+          data: acVRealUArr,
+          borderColor:C.ventas,
+          backgroundColor:C.ventas+'22',
+          fill:true, tension:0.3, pointRadius:3,
+          spanGaps:false
+        },
+      ]
+    },
+    options: baseOpts('u')
+  });
 
   // Chart 3 – Acumulado Unidades (línea) — Meta vs Real
   chartsCreados['ch-acum-unid'] = new Chart(document.getElementById('ch-acum-unid'),{
@@ -1770,7 +1855,7 @@ function renderCartera(){
   filtradoCron.forEach(r => {
     const nombre = str(r['Nombre del Cliente']);
     if (clientes[nombre]) {
-      const tipoCredito = str(r['Concepto']) || str(r['concepto']);
+      const tipoCredito = str(r['Tipo de Credito']) || str(r['Tipo Credito']);
       const estado = str(r['ESTADO']);
       
       if (tipoCredito.trim().toLowerCase() === 'cuota inicial' && estado.trim().toLowerCase() === 'por pagar') {
@@ -1846,8 +1931,8 @@ function renderProyecciones(){
   const activosVendidos = filtrado.filter(r=>['VENDIDO'].includes(str(r['SITUACION'])));
   const valorVendidos = activosVendidos.reduce((a,r)=>a+num(r['VALOR S/']),0);
 
-  // --- CORREGIDO: Procesar Hoja Abonos para Ingresos Realizados ---
-  rawAB.forEach(r => {
+  // --- Procesar Hoja Abonos para Ingresos Realizados (solo Departamentos) ---
+  rawAB.filter(r => str(r['DPTO']) !== '').forEach(r => {
     const proy = str(r['PROYECTO']);
     if(fp && proy !== fp) return;
     
