@@ -1159,7 +1159,7 @@ function renderGraficos(){
   const totalUVP = Object.values(ventasProyU).reduce((a,b)=>a+b,0);
 
   // ── Destruir charts previos ───────────────────────────────
-  ['ch-vr-ingr','ch-proy-ingr','ch-comercial-meta','ch-acum-unid','ch-acum-s'].forEach(id=>{
+  ['ch-vr-ingr','ch-proy-ingr','ch-comercial-meta-mensual','ch-comercial-meta','ch-acum-unid','ch-acum-s'].forEach(id=>{
     if(chartsCreados[id]){chartsCreados[id].destroy();delete chartsCreados[id];}
   });
 
@@ -1192,6 +1192,16 @@ function renderGraficos(){
         <span class="legend-item"><span class="legend-dot" style="background:${C.proyIngr}"></span>Ingresos Acum.</span>
       </div>
       <div class="ch" style="height:220px"><canvas id="ch-proy-ingr"></canvas></div>
+    </div>
+
+    <!-- Gráfico nuevo: Meta Comercial vs Real MENSUAL (barras) -->
+    <div class="sec-label" style="margin-top:16px">Meta Comercial vs Real — Ventas Mensuales</div>
+    <div class="chart-card">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#A78BFA;border-radius:2px"></span>Meta Mensual</span>
+        <span class="legend-item"><span class="legend-dot" style="background:${C.ventas};border-radius:2px"></span>Real Mensual</span>
+      </div>
+      <div class="ch" style="height:220px"><canvas id="ch-comercial-meta-mensual"></canvas></div>
     </div>
 
     <!-- Gráfico nuevo: Meta Comercial vs Real (Unidades acumuladas) -->
@@ -1384,7 +1394,6 @@ function renderGraficos(){
       });
       metaComercialU[k] = (metaComercialU[k] || 0) + total;
     });
-    console.log('🔍 metaComercialU:', JSON.stringify(metaComercialU));
   }
 
   // Acumulado Meta Comercial
@@ -1395,7 +1404,62 @@ function renderGraficos(){
     acMCUArr.push(acMCU);
   });
 
-  // Chart Meta Comercial vs Real
+  // Chart Meta Comercial vs Real — MENSUAL (barras)
+  // Real mensual: cortar meses futuros al mes actual
+  const ventasRealesUMensual = activeKeys.map(k => k <= mesActualKey ? (ventasRealesU[k] || 0) : null);
+  const metaComercialUMensual = activeKeys.map(k => metaComercialU[k] || 0);
+
+  chartsCreados['ch-comercial-meta-mensual'] = new Chart(document.getElementById('ch-comercial-meta-mensual'),{
+    type:'bar',
+    data:{
+      labels: activeLabels,
+      datasets:[
+        {
+          label:'Meta Mensual',
+          data: metaComercialUMensual,
+          backgroundColor:'#A78BFA55',
+          borderColor:'#A78BFA',
+          borderWidth:1.5,
+          borderRadius:4,
+          order:2
+        },
+        {
+          label:'Real Mensual',
+          data: ventasRealesUMensual,
+          backgroundColor: C.ventas+'99',
+          borderColor: C.ventas,
+          borderWidth:1.5,
+          borderRadius:4,
+          order:1
+        },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor: isLight ? 'rgba(255,255,255,0.97)' : 'rgba(12,14,20,0.92)',
+          borderColor:     isLight ? 'rgba(138,106,31,0.3)'   : 'rgba(201,168,76,0.3)',
+          borderWidth:1,
+          titleColor: isLight ? '#8A6A1F' : '#C9A84C',
+          bodyColor:  isLight ? '#374151' : '#A0A8C0',
+          padding:10,
+          callbacks:{label: c => c.dataset.label+': '+c.parsed.y+' unid.'}
+        }
+      },
+      scales:{
+        x:{grid:{display:false}, ticks:{color:C.tick, font:{size:10}, autoSkip:true, maxRotation:45}},
+        y:{
+          grid:{color:C.grid},
+          ticks:{color:C.tick, font:{size:10}, stepSize:1},
+          beginAtZero:true
+        }
+      }
+    }
+  });
+
+  // Chart Meta Comercial vs Real — ACUMULADO
   chartsCreados['ch-comercial-meta'] = new Chart(document.getElementById('ch-comercial-meta'),{
     type:'line',
     data:{
