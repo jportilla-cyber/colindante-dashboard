@@ -682,6 +682,35 @@ let chartsCreados = {};
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
 
 // ── Utilidades ───────────────────────────────────────────────
+/**
+ * Cuenta los desestimientos únicos basándose en Proyecto, Cliente y la unidad (DPTO, EST, DEP).
+ * @param {Array<Object>} data - Los datos de la hoja de Abonos (rawAB).
+ * @param {string} projectFilter - Filtro opcional por nombre de proyecto.
+ * @returns {number} El número de desestimientos únicos.
+ */
+function getUniqueDesestimientosCount(data, projectFilter = '') {
+  const uniqueDesestimientos = new Set();
+  data.forEach(r => {
+    const proyecto = str(r['PROYECTO']);
+    if (projectFilter && proyecto !== projectFilter) return;
+
+    const detalle = str(r['DETALLE']).toLowerCase();
+    if (!detalle.includes('desestimiento')) return;
+
+    const cliente = str(r['Nombre del Cliente']) || str(r['CLIENTE']);
+
+    let unitIdentifier = '';
+    if (str(r['DPTO']) !== '') unitIdentifier = `DPTO-${str(r['DPTO'])}`;
+    else if (str(r['EST']) !== '') unitIdentifier = `EST-${str(r['EST'])}`;
+    else if (str(r['DEP']) !== '') unitIdentifier = `DEP-${str(r['DEP'])}`;
+
+    if (unitIdentifier !== '') {
+      uniqueDesestimientos.add(`${proyecto}-${cliente}-${unitIdentifier}`);
+    }
+  });
+  return uniqueDesestimientos.size;
+}
+
 const fmt = n => {
   if(!n && n!==0) return '—';
   const abs = Math.abs(n);
@@ -832,13 +861,7 @@ function renderResumen(){
   const valVend = inmuebles.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['VALOR S/']),0);
   const valVendidoSolo = inmuebles.filter(r=>str(r['SITUACION'])==='VENDIDO').reduce((a,r)=>a+num(r['VALOR S/']),0);
 
-  // Desestimientos: filas en Abonos cuyo campo DETALLE contiene "desestimiento"
-  // Solo filtrado por proyecto global
-  const desestimientos = rawAB.filter(r => {
-    if(str(r['DPTO']) === '') return false;
-    if(fp && str(r['PROYECTO']) !== fp) return false;
-    return str(r['DETALLE']).toLowerCase().includes('desestimiento');
-  }).length;
+  const desestimientos = getUniqueDesestimientosCount(rawAB, fp);
 
   document.getElementById('resumen-content').innerHTML=`
     <div class="hero-banner">
@@ -901,7 +924,7 @@ function renderProyectos(){
     const ingresos=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Ingresos  S/.']),0);
     const xCobrar=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Por Pagar  S/.']),0);
     const valVendidoProyecto=filtrado.filter(r=>str(r['PROYECTO'])===p&&str(r['SITUACION'])==='VENDIDO').reduce((a,r)=>a+num(r['VALOR S/']),0);
-    const desest=rawAB.filter(r=>str(r['DPTO'])!==''&&str(r['PROYECTO'])===p&&str(r['DETALLE']).toLowerCase().includes('desestimiento')).length;
+    const desest = getUniqueDesestimientosCount(rawAB, p);
 
     const accentColor = pct>=10 ? 'accent-verde' : pct>=5 ? 'accent-amber' : 'accent-rojo';
 
