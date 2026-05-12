@@ -846,6 +846,11 @@ function setTipoCredFiltro(valor, btn){
 // PÁGINA 1: RESUMEN
 // ════════════════════════════════════════════════════════════
 function renderResumen(){
+  // Destruir chart previo si existe
+  if(chartsCreados['ch-situacion']){
+    chartsCreados['ch-situacion'].destroy();
+    delete chartsCreados['ch-situacion'];
+  }
   const fp = document.getElementById('fil-proyecto').value;
   const inmuebles = filtrado;
   const total   = inmuebles.length;
@@ -860,6 +865,8 @@ function renderResumen(){
   const xCobrar = activos.reduce((a,r)=>a+num(r['Por Pagar  S/.']),0);
   const valVend = inmuebles.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['VALOR S/']),0);
   const valVendidoSolo = inmuebles.filter(r=>str(r['SITUACION'])==='VENDIDO').reduce((a,r)=>a+num(r['VALOR S/']),0);
+  const valPresupuestado = inmuebles.reduce((a,r)=>a+num(r['Presupuestado S/']),0);
+  const pctValor = valPresupuestado > 0 ? Math.round(valVendidoSolo / valPresupuestado * 1000) / 10 : 0;
 
   const desestimientos = getUniqueDesestimientosCount(rawAB, fp);
 
@@ -874,24 +881,42 @@ function renderResumen(){
       </div>
     </div>
 
-    <div class="sec-label">Avance comercial</div>
-    <div class="prog-wrap">
-      <div class="prog-row">
-        <span class="prog-label">% Comercializado</span>
-        <span class="prog-pct">${pct}%</span>
+    <div class="sec-label">Situación Comercial</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; align-items:center;">
+      <div class="prog-wrap" style="height:100%">
+        <div class="prog-row">
+          <span class="prog-label">% Comercializado</span>
+          <span class="prog-pct">${pct}%</span>
+        </div>
+        <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(pct,1)}%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--text3)">
+          <span>Bloqueados: ${bloq}</span><span>Activos: ${vendido+separado}</span>
+        </div>
       </div>
-      <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(pct,1)}%"></div></div>
-      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--text3)">
-        <span>Bloqueados: ${bloq}</span><span>Activos: ${vendido+separado}</span>
+      <div class="chart-card" style="padding:12px 16px; margin:0; display:flex; align-items:center; justify-content:center; gap:24px;">
+        <div class="ch" style="height:90px; width:90px; flex-shrink:0;"><canvas id="ch-situacion"></canvas></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; font-size:11px;">
+          <div class="legend-item" style="color:var(--text2)"><span class="legend-dot" style="background:var(--verde)"></span>Vendido<br><strong style="font-size:13px;color:var(--text);font-family:'Inter',sans-serif;">${vendido}</strong></div>
+          <div class="legend-item" style="color:var(--text2)"><span class="legend-dot" style="background:var(--amber)"></span>Separado<br><strong style="font-size:13px;color:var(--text);font-family:'Inter',sans-serif;">${separado}</strong></div>
+          <div class="legend-item" style="color:var(--text2)"><span class="legend-dot" style="background:var(--rojo)"></span>Bloqueado<br><strong style="font-size:13px;color:var(--text);font-family:'Inter',sans-serif;">${bloq}</strong></div>
+          <div class="legend-item" style="color:var(--text2)"><span class="legend-dot" style="background:var(--text3)"></span>Por Vender<br><strong style="font-size:13px;color:var(--text);font-family:'Inter',sans-serif;">${xvender}</strong></div>
+        </div>
       </div>
     </div>
 
     <div class="sec-label">Financiero</div>
-    <div class="kpi-grid">
-      <div class="kpi accent-verde"><div class="kpi-l">Valor vendido</div><div class="kpi-v ok money">${fmt(valVendidoSolo)}</div><div class="kpi-s">solo vendidos</div></div>
-      <div class="kpi accent-blue"><div class="kpi-l">Valor negociado</div><div class="kpi-v money" style="color:var(--accent)">${fmt(valVend)}</div><div class="kpi-s">vend + sep</div></div>
+    <div class="prog-wrap">
+      <div class="prog-row">
+        <span class="prog-label">Avance sobre Presupuesto</span>
+        <span class="prog-pct">${pctValor}%</span>
+      </div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(pctValor,1)}%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--text3)">
+        <span>Vendido: <strong style="color:var(--verde)">${fmt(valVendidoSolo)}</strong></span><span>Presupuestado: <strong style="color:var(--text2)">${fmt(valPresupuestado)}</strong></span>
+      </div>
     </div>
-    <div class="kpi-grid" style="margin-top:0">
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">
+      <div class="kpi accent-blue"><div class="kpi-l">Valor negociado</div><div class="kpi-v money" style="color:var(--accent)">${fmt(valVend)}</div><div class="kpi-s">vendidos + separados</div></div>
       <div class="kpi accent-gold"><div class="kpi-l">Ingresos recibidos</div><div class="kpi-v money" style="color:var(--gold)">${fmt(ingresos)}</div></div>
       <div class="kpi accent-amber"><div class="kpi-l">Por cobrar</div><div class="kpi-v warn money">${fmt(xCobrar)}</div></div>
     </div>
@@ -901,6 +926,37 @@ function renderResumen(){
     </div>
   `;
   renderProyectos();
+
+  // --- Renderizar el nuevo Doughnut Chart ---
+  const isLight = document.body.classList.contains('light');
+  const C = {
+    vendido:   isLight ? '#1A7A48' : '#34C77B',
+    separado:  isLight ? '#B45309' : '#F59E0B',
+    porVender: isLight ? '#9CA3AF' : '#606880',
+    bloqueado: isLight ? '#C0392B' : '#F05252',
+  };
+
+  chartsCreados['ch-situacion'] = new Chart(document.getElementById('ch-situacion'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Vendido', 'Separado', 'Por Vender', 'Bloqueado'],
+      datasets: [{
+        data: [vendido, separado, xvender, bloq],
+        backgroundColor: [C.vendido, C.separado, C.porVender, C.bloqueado],
+        borderWidth: 2,
+        borderColor: isLight ? '#F4F6FA' : '#0C0E14',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw} unidades` } }
+      }
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════
@@ -924,6 +980,8 @@ function renderProyectos(){
     const ingresos=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Ingresos  S/.']),0);
     const xCobrar=filtrado.filter(r=>str(r['PROYECTO'])===p&&['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['Por Pagar  S/.']),0);
     const valVendidoProyecto=filtrado.filter(r=>str(r['PROYECTO'])===p&&str(r['SITUACION'])==='VENDIDO').reduce((a,r)=>a+num(r['VALOR S/']),0);
+    const valVendProyecto = dptos.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['VALOR S/']),0);
+    const valPresupuestadoProy = dptos.reduce((a,r)=>a+num(r['Presupuestado S/']),0);
     const desest = getUniqueDesestimientosCount(rawAB, p);
 
     const accentColor = pct>=10 ? 'accent-verde' : pct>=5 ? 'accent-amber' : 'accent-rojo';
@@ -949,10 +1007,22 @@ function renderProyectos(){
         </div>
       </div>
 
+      <!-- Barra de avance financiero por proyecto -->
+      <div class="prog-wrap" style="border-radius:0;border-top:none;border-bottom:none;">
+        <div class="prog-row">
+          <span class="prog-label">Avance sobre Presupuesto</span>
+          <span class="prog-pct">${valPresupuestadoProy > 0 ? Math.round(valVendidoProyecto / valPresupuestadoProy * 1000) / 10 : 0}%</span>
+        </div>
+        <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(valPresupuestadoProy > 0 ? (valVendidoProyecto / valPresupuestadoProy * 100) : 0, 1)}%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--text3)">
+          <span>Vendido: <strong style="color:var(--verde)">${fmt(valVendidoProyecto)}</strong></span><span>Presupuestado: <strong style="color:var(--text2)">${fmt(valPresupuestadoProy)}</strong></span>
+        </div>
+      </div>
+
       <!-- KPIs financieros -->
       <div class="kpi-grid" style="margin-top:0;border-radius:0;gap:1px">
         <div class="kpi ${accentColor}" style="border-radius:0;border-top:none"><div class="kpi-l">Total inmuebles</div><div class="kpi-v">${t}</div></div>
-        <div class="kpi accent-verde" style="border-radius:0;border-top:none"><div class="kpi-l">Valor vendido</div><div class="kpi-v ok money">${fmt(valVendidoProyecto)}</div></div>
+        <div class="kpi accent-blue" style="border-radius:0;border-top:none"><div class="kpi-l">Valor Negociado</div><div class="kpi-v money" style="color:var(--accent)">${fmt(valVendProyecto)}</div></div>
         <div class="kpi accent-gold" style="border-radius:0;border-top:none"><div class="kpi-l">Ingresos recibidos</div><div class="kpi-v money" style="color:var(--gold)">${fmt(ingresos)}</div></div>
         <div class="kpi accent-amber" style="border-radius:0;border-top:none"><div class="kpi-l">Por cobrar</div><div class="kpi-v warn money">${fmt(xCobrar)}</div></div>
       </div>
