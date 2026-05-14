@@ -5,18 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Colindante · Dashboard Gerencial</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  /* Dark luxury palette */
-  --bg:       #0C0E14;
-  --bg2:      #12151E;
-  --bg3:      #181C28;
-  --surface:  #1C2030;
-  --surface2: #222840;
-  --border:   rgba(255,255,255,.07);
-  --border2:  rgba(255,255,255,.12);
+  /* Dark theme: Deep Blue/Grey, Tech-inspired */
+  --bg:       #010409; /* Very dark, almost black, like GitHub's dark theme */
+  --bg2:      #0A0D14; /* Slightly lighter for header/nav/filters */
+  --bg3:      #12161F; /* For nested elements like ck backgrounds */
+  --surface:  #1A202C; /* Card backgrounds */
+  --surface2: #242B3A; /* Alternate card background, or button background */
+  --border:   rgba(255,255,255,0.12); /* Slightly more visible */
+  --border2:  rgba(255,255,255,0.18); /* For stronger borders/dividers */
 
   /* Brand */
   --gold:     #C9A84C;
@@ -24,62 +25,62 @@
   --gold-glow:rgba(201,168,76,.4);
   --accent:   #4A90D9;
   --accent-dim:rgba(74,144,217,.15);
-
+  --accent:   #00BFFF; /* Deep Sky Blue, good for techy feel */
   /* Semantic */
-  --verde:    #34C77B;
+  --verde:    #34C77B; /* Professional Green */
   --verde-dim:rgba(52,199,123,.14);
-  --rojo:     #F05252;
+  --rojo:     #F05252; /* Professional Red */
   --rojo-dim: rgba(240,82,82,.14);
-  --amber:    #F59E0B;
+  --amber:    #F59E0B; /* Professional Amber */
   --amber-dim:rgba(245,158,11,.14);
 
   /* Text */
-  --text:   #F0F2F8;
-  --text2:  #A0A8C0;
-  --text3:  #606880;
-
+  --text:   #E6EDF3; /* Light grey for main text */
+  --text2:  #B0BCCB; /* Medium grey for secondary text */
+  --text3:  #7A8B9E; /* Darker grey for subtle hints */
+  
   /* Alias for backward compat */
-  --azul:     #0C0E14;
-  --azul-med: #4A90D9;
-  --azul-cl:  rgba(74,144,217,.12);
-  --verde-cl: rgba(52,199,123,.12);
-  --rojo-cl:  rgba(240,82,82,.12);
-  --amber-cl: rgba(245,158,11,.12);
-  --gris:     #1C2030;
-  --gris-med: rgba(255,255,255,.08);
-  --gris-text:#A0A8C0;
-  --white:    #1C2030;
-  --text2-compat:#A0A8C0;
+  --azul:     var(--bg); /* Use new bg for compatibility */
+  --azul-med: var(--accent); /* Use new accent for compatibility */
+  --azul-cl:  var(--accent-dim); /* Use new accent-dim for compatibility */
+  --verde-cl: var(--verde-dim); /* Use new verde-dim for compatibility */
+  --rojo-cl:  var(--rojo-dim); /* Use new rojo-dim for compatibility */
+  --amber-cl: var(--amber-dim); /* Use new amber-dim for compatibility */
+  --gris:     var(--surface); /* Use new surface for compatibility */
+  --gris-med: var(--border); /* Use new border for compatibility */
+  --gris-text:var(--text3); /* Use new text3 for compatibility */
+  --white:    var(--surface); /* Use new surface for compatibility */
+  --text2-compat:var(--text2); /* Use new text2 for compatibility */
 
   --radius:14px;--radius-sm:8px;--radius-lg:18px;
 }
 
 /* ── LIGHT THEME ── */
 body.light{
-  --bg:       #F4F6FA;
-  --bg2:      #FFFFFF;
-  --bg3:      #EEF1F7;
-  --surface:  #FFFFFF;
-  --surface2: #E8ECF4;
-  --border:   rgba(0,0,0,.08);
-  --border2:  rgba(0,0,0,.13);
+  --bg:       #F8FAFC; /* Light background */
+  --bg2:      #FFFFFF; /* White sections */
+  --bg3:      #F8FAFC; /* Lighter nested elements */
+  --surface:  #FFFFFF; /* Card backgrounds */
+  --surface2: #E8EDF2; /* Alternate card background */
+  --border:   rgba(0,0,0,0.1); /* Subtle dark border */
+  --border2:  rgba(0,0,0,0.15);
 
-  --gold:     #8A6A1F;
-  --gold-dim: rgba(138,106,31,.1);
-  --gold-glow:rgba(138,106,31,.3);
-  --accent:   #1A6BBF;
-  --accent-dim:rgba(26,107,191,.12);
+  --gold:     #B8860B; /* Darker gold for contrast */
+  --gold-dim: rgba(184,134,11,0.1);
+  --gold-glow:rgba(184,134,11,0.3);
+  --accent:   #1E90FF; /* Dodger Blue, good contrast */
+  --accent-dim:rgba(30,144,255,0.1);
 
-  --verde:    #1A7A48;
-  --verde-dim:rgba(26,122,72,.1);
-  --rojo:     #C0392B;
-  --rojo-dim: rgba(192,57,43,.1);
-  --amber:    #B45309;
-  --amber-dim:rgba(180,83,9,.1);
+  --verde:    #228B22; /* Forest green */
+  --verde-dim:rgba(34,139,34,0.1);
+  --rojo:     #CC0000; /* Stronger red */
+  --rojo-dim: rgba(204,0,0,0.1);
+  --amber:    #DAA520; /* Goldenrod */
+  --amber-dim:rgba(218,165,32,0.1);
 
-  --text:   #111827;
-  --text2:  #374151;
-  --text3:  #6B7280;
+  --text:   #24292E;
+  --text2:  #586069;
+  --text3:  #8B949E;
 }
 
 /* Light mode logo: verde oscuro original, se ve bien sobre header claro */
@@ -87,8 +88,8 @@ body.light{
 body:not(.light) #site-logo { mix-blend-mode: screen; filter: none; }
 body.light #site-logo { mix-blend-mode: screen; filter: none; }
 
-/* Header light mode: fondo oscuro (verde corporativo) para que el logo se vea igual que en dark */
-body.light .hdr {
+/* Header light mode: fondo oscuro (verde corporativo) para que el logo se vea igual que en dark. */
+body.light .hdr { 
   background: linear-gradient(135deg, #0F2A14 0%, #1A3D20 100%);
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
@@ -97,7 +98,7 @@ body.light .hdr-title { color: #F0F2F8; }
 body.light .hdr-fecha { color: rgba(255,255,255,0.5); }
 
 /* ── Light mode overrides ── */
-body.light .kpi-v { color: #111827; }
+body.light .kpi-v { color: var(--text); }
 body.light .kpi-l { color: #6B7280; }
 body.light .kpi-s { color: #9CA3AF; }
 body.light .kpi { background:#FFFFFF; border-color:rgba(0,0,0,0.1); box-shadow:0 1px 3px rgba(0,0,0,0.06); }
@@ -106,7 +107,7 @@ body.light .tbl-wrap { background:#FFFFFF; border-color:rgba(0,0,0,0.1); }
 body.light th { background:#F9FAFB; color:#8A6A1F; }
 body.light td { color:#374151; border-color:rgba(0,0,0,0.06); }
 body.light tr:hover td { background:rgba(138,106,31,0.06); }
-body.light .prog-wrap { background:#FFFFFF; border-color:rgba(0,0,0,0.1); }
+body.light .prog-wrap { background:var(--surface); border-color:var(--border); }
 body.light .prog-label { color:#374151; }
 body.light .sec-label { color:#9CA3AF; }
 body.light .tab { color:#9CA3AF; }
@@ -114,9 +115,9 @@ body.light .tab:hover { color:#374151; background:rgba(0,0,0,0.03); }
 body.light .tab.active { color:#8A6A1F; border-bottom-color:#8A6A1F; background:rgba(138,106,31,0.08); }
 body.light .btn-refresh { background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.2); color:#F0F2F8; }
 body.light #refresco-info { color:rgba(255,255,255,0.45); }
-body.light .cliente-card { background:#FFFFFF; border-color:rgba(0,0,0,0.1); }
+body.light .cliente-card { background:var(--surface); border-color:rgba(0,0,0,0.1); }
 body.light .cliente-nombre { color:#111827; }
-body.light .ck { background:#F9FAFB; border-color:rgba(0,0,0,0.07); }
+body.light .ck { background:var(--bg3); border-color:rgba(0,0,0,0.07); }
 body.light .ck-v { color:#111827; }
 body.light .ck-l { color:#9CA3AF; }
 body.light .legend-item { color:#6B7280; }
@@ -130,7 +131,7 @@ body.light .hero-banner-sub { color:#6B7280; border-color:rgba(0,0,0,0.08); }
 body.light .nav { background:#F9FAFB; border-color:rgba(0,0,0,0.08); }
 body.light .filtros { background:#F9FAFB; border-color:rgba(0,0,0,0.08); }
 body.light .cron-body { background:#FFFFFF; border-color:rgba(0,0,0,0.1); }
-body.light .cron-row { border-color:rgba(0,0,0,0.06); }
+body.light .cron-row { border-color:var(--border); }
 body.light .cron-row:hover { background:rgba(0,0,0,0.02); }
 body.light .cron-cliente { color:#111827; }
 body.light .cron-meta { color:#6B7280; }
@@ -140,11 +141,11 @@ body.light .kpi-v.ok { color:var(--verde); }
 body.light .kpi-v.warn { color:var(--amber); }
 body.light .kpi-v.danger { color:var(--rojo); }
 
-body{
+body {
   font-family:'DM Sans',system-ui,sans-serif;
   background:var(--bg);
   color:var(--text);
-  font-size:14px;
+  font-size:13px;
   min-height:100vh;
 }
 .font-display{ font-family:'Inter',sans-serif; }
@@ -161,48 +162,47 @@ body{
 @keyframes pulseGold{0%,100%{box-shadow:0 0 0 0 var(--gold-glow)}50%{box-shadow:0 0 0 6px transparent}}
 
 /* ── HEADER ── */
-.hdr{
-  background:linear-gradient(135deg, #1E2440 0%, #2e3861 100%);
-  padding:14px 16px 12px;
+.hdr {
+  background:var(--bg2); /* Use a slightly lighter background from the new palette */
+  padding:12px 16px 10px; /* Slightly reduced padding */
   position:sticky;top:0;z-index:100;
-  border-bottom:1px solid rgba(255,255,255,.1);
-  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border); /* Use border variable */
+  backdrop-filter:blur(10px);
 }
 .hdr::before{
-  content:'';position:absolute;inset:0;
-  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9A84C' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  pointer-events:none;
+  display: none;
 }
 .hdr-row{display:flex;align-items:center;justify-content:space-between;position:relative}
 .hdr-logo{
   font-family:'Inter',sans-serif;
-  font-size:10px;font-weight:600;
+  font-size:12px;font-weight:800; /* Slightly larger and bolder */
   color:var(--gold);
-  letter-spacing:.18em;text-transform:uppercase;
+  letter-spacing:.25em;text-transform:uppercase; /* More spacing */
   display:flex;align-items:center;gap:6px;
 }
 .hdr-logo::before{
-  content:'◆';font-size:8px;color:var(--gold);
+  content:'◆';font-size:10px;color:var(--gold); /* Slightly larger diamond */
 }
 .hdr-title{
   font-family:'Inter',sans-serif;
-  font-size:18px;font-weight:700;
+  font-size:19px;font-weight:800; /* Back to 18px, even bolder */
   color:var(--text);margin:3px 0 0;
-  letter-spacing:-.02em;
+  letter-spacing:-.04em; /* Tighter letter spacing */
 }
-.hdr-fecha{font-size:11px;color:var(--text3);margin-top:2px;font-weight:400}
-#refresco-info{font-size:10px;color:var(--text3);margin-top:1px}
-.btn-refresh{
-  background:var(--surface2);
-  border:1px solid var(--border2);
+#hdr-fecha { font-size:10px;color:var(--text3);margin-top:2px;font-weight:400 } /* Slightly smaller date */
+#refresco-info { font-size:9px;color:var(--text3);margin-top:1px } /* Slightly smaller refresh info */
+.btn-refresh {
+  background:var(--surface); /* Use surface for buttons */
+  border:1px solid var(--border); /* Use border variable */
   border-radius:var(--radius-sm);
   padding:7px 12px;color:var(--text2);
   font-size:12px;font-weight:500;
   cursor:pointer;display:flex;align-items:center;gap:5px;
   transition:all .2s;font-family:'DM Sans',sans-serif;
 }
-.btn-refresh:active,.btn-refresh:hover{background:var(--surface);color:var(--gold);border-color:var(--gold-glow)}
-.spin{display:inline-block;font-size:14px}
+.btn-refresh:hover{background:var(--surface2);color:var(--gold);border-color:var(--gold-glow);box-shadow:0 0 5px var(--gold-dim);}
+.btn-refresh:active{transform:scale(.98);box-shadow:none;}
+.spin { display:inline-block;font-size:13px }
 .spinning{animation:spin .8s linear infinite}
 
 /* ── NAV TABS ── */
@@ -214,7 +214,7 @@ body{
 }
 .nav::-webkit-scrollbar{display:none}
 .tab{
-  flex:1;min-width:75px;
+  flex:1;min-width:90px; /* Slightly wider tabs */
   padding:12px 8px;
   font-size:11px;font-weight:500;
   color:var(--text3);
@@ -227,7 +227,7 @@ body{
 }
 .tab:hover{color:var(--text2);background:rgba(255,255,255,.02)}
 .tab.active{
-  color:var(--gold);
+  color:var(--gold); /* Keep gold for active */
   border-bottom-color:var(--gold);
   font-weight:600;
   background:var(--gold-dim);
@@ -281,9 +281,9 @@ select option{background:#1C2030;color:var(--text2)}
   font-family:'Inter',sans-serif;
   font-size:9px;font-weight:700;
   color:var(--text3);
-  letter-spacing:.14em;text-transform:uppercase;
+  letter-spacing:.18em;text-transform:uppercase; /* Slightly more letter spacing */
   margin:18px 0 10px;
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:10px;
 }
 .sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
 
@@ -291,23 +291,24 @@ select option{background:#1C2030;color:var(--text2)}
 .kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:6px}
 .kpi{
   background:var(--surface);
-  border-radius:var(--radius);
+  border-radius:var(--radius-sm);
   padding:14px 12px;
   border:1px solid var(--border);
-  position:relative;overflow:hidden;
+  position:relative;overflow:hidden; /* Ensure pseudo-elements are clipped */
   transition:transform .2s, border-color .2s;
   min-width:0;
 }
+.kpi:hover{transform:scale(.99);border-color:var(--gold-glow);box-shadow:0 0 10px var(--gold-dim);} /* Subtle glow on hover */
 .kpi::before{
   content:'';position:absolute;
   top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent,var(--border2),transparent);
 }
-.kpi:active{transform:scale(.98)}
-.kpi-l{font-size:11px;color:var(--text3);margin-bottom:6px;line-height:1.3;font-weight:400}
-.kpi-v{font-size:18px;font-weight:700;color:var(--text);line-height:1.1;font-family:'Inter',sans-serif;word-break:break-word;overflow-wrap:break-word;}
-.kpi-s{font-size:10px;color:var(--text3);margin-top:4px}
-.kpi-v.ok{color:var(--verde)}
+.kpi:active{transform:scale(.98);box-shadow:none;}
+.kpi-l{font-size:10px;color:var(--text3);margin-bottom:6px;line-height:1.3;font-weight:400}
+.kpi-v{font-size:17px;font-weight:700;color:var(--text);line-height:1.1;font-family:'Fira Code', 'Courier New', monospace;word-break:break-word;overflow-wrap:break-word;} /* Apply Fira Code */
+.kpi-s{font-size:10px;color:var(--text3);margin-top:4px} /* Keep small for secondary info */
+.kpi-v.ok{color:var(--verde);}
 .kpi-v.warn{color:var(--amber)}
 .kpi-v.danger{color:var(--rojo)}
 .kpi-v.money{font-size:14px;}
@@ -315,7 +316,7 @@ select option{background:#1C2030;color:var(--text2)}
 /* ── PROGRESS KPI (used in Proyecciones) ── */
 .prog-kpi{
   background:var(--surface);
-  border-radius:var(--radius);
+  border-radius:var(--radius-sm);
   border:1px solid var(--border);
   padding:14px;
   margin-bottom:8px;
@@ -327,8 +328,8 @@ select option{background:#1C2030;color:var(--text2)}
   background:linear-gradient(90deg,transparent,var(--gold-glow),transparent);
 }
 .prog-kpi-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.prog-kpi-label{font-size:11px;color:var(--text3);font-weight:400;line-height:1.4}
-.prog-kpi-pct{font-family:'Inter',sans-serif;font-size:20px;font-weight:800;color:var(--gold)}
+.prog-kpi-label{font-size:11px;color:var(--text3);font-weight:400;line-height:1.4} /* Keep small */
+.prog-kpi-pct{font-family:'Inter',sans-serif;font-size:18px;font-weight:800;color:var(--gold)}
 .prog-kpi-values{display:flex;justify-content:space-between;margin-top:8px;font-size:10px}
 .prog-kpi-real{color:var(--verde);font-weight:600}
 .prog-kpi-meta{color:var(--text3)}
@@ -350,10 +351,10 @@ select option{background:#1C2030;color:var(--text2)}
   position:relative;overflow:hidden;
 }
 .prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.prog-label{font-size:13px;font-weight:500;color:var(--text2)}
-.prog-pct{font-size:16px;font-weight:700;color:var(--gold);font-family:'Inter',sans-serif}
+.prog-label{font-size:12px;font-weight:500;color:var(--text2)}
+.prog-pct{font-size:15px;font-weight:700;color:var(--gold);font-family:'Fira Code', 'Courier New', monospace;} /* Apply Fira Code */
 .prog-bg{
-  height:6px;border-radius:3px;
+  height:5px;border-radius:2px;
   background:rgba(255,255,255,.06);
   overflow:hidden;
 }
@@ -367,7 +368,7 @@ select option{background:#1C2030;color:var(--text2)}
 /* ── TABLA ── */
 .tbl-wrap{
   background:var(--surface);
-  border-radius:var(--radius);
+  border-radius:var(--radius-sm);
   border:1px solid var(--border);
   overflow:hidden;margin-bottom:6px;
 }
@@ -377,20 +378,20 @@ th{
   background:var(--bg);
   color:var(--gold);
   font-family:'Inter',sans-serif;
-  font-weight:600;font-size:10px;
+  font-weight:600;font-size:9px;
   padding:10px 12px;text-align:left;
   white-space:nowrap;letter-spacing:.06em;text-transform:uppercase;
   border-bottom:1px solid var(--border);
 }
-td{
+td {
   padding:10px 12px;
-  border-top:1px solid var(--border);
-  color:var(--text2);vertical-align:top;
+  border-top:1px solid var(--border); /* Use border variable */
+  color:var(--text2);vertical-align:top; /* Keep text2 for data */
 }
 tr:nth-child(even) td{background:rgba(255,255,255,.015)}
 tr:hover td{background:var(--gold-dim);transition:background .15s}
 .proy-name{font-weight:600;font-size:12px;color:var(--text)}
-
+.font-mono { font-family: 'Courier New', monospace; } /* New mono font class */
 /* ── PILLS ── */
 .pill{
   display:inline-flex;align-items:center;
@@ -407,7 +408,7 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
 /* ── CHART WRAP ── */
 .chart-card{
   background:var(--surface);
-  border-radius:var(--radius);
+  border-radius:var(--radius-sm);
   border:1px solid var(--border);
   padding:16px;margin-bottom:6px;
   position:relative;overflow:hidden;
@@ -418,7 +419,7 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
   background:linear-gradient(90deg,transparent 0%,var(--gold-glow) 50%,transparent 100%);
 }
 .chart-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px;font-family:'Inter',sans-serif}
-.chart-sub{font-size:11px;color:var(--text3);margin-bottom:12px}
+.chart-sub{font-size:10px;color:var(--text3);margin-bottom:12px}
 .legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)}
 .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -427,8 +428,8 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
 /* ── CLIENTE CARD ── */
 .cliente-card{
   background:var(--surface);
-  border-radius:var(--radius);
-  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  border:1px solid var(--border); /* Keep border */
   padding:14px;margin-bottom:10px;
   transition:border-color .2s;
 }
@@ -437,12 +438,13 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
   background:linear-gradient(135deg, rgba(245,158,11,.07) 0%, var(--surface) 60%);
   border:1px solid rgba(245,158,11,.2);
 }
+.cliente-card:hover{border-color:var(--gold-glow);box-shadow:0 0 8px var(--gold-dim);}
 .cliente-nombre{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;line-height:1.3;font-family:'Inter',sans-serif}
-.cliente-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.cliente-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-.ck{background:var(--bg3);border-radius:var(--radius-sm);padding:8px 10px;border:1px solid var(--border)}
-.ck-l{font-size:10px;color:var(--text3);margin-bottom:2px}
-.ck-v{font-size:12px;font-weight:600;color:var(--text);font-family:'Inter',sans-serif}
+.cliente-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.cliente-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px} /* Keep grid layout */
+.ck{background:var(--bg3);border-radius:var(--radius-sm);padding:7px 9px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,0.05);} /* Add subtle shadow */
+.ck-l{font-size:9px;color:var(--text3);margin-bottom:2px} /* Keep small for label */
+.ck-v{font-size:12px;font-weight:600;color:var(--text);font-family:'Fira Code', 'Courier New', monospace;} /* Apply Fira Code */
 .ck-v.ok{color:var(--verde)}
 .ck-v.warn{color:var(--amber)}
 
@@ -462,7 +464,7 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
 .cron-hdr{
   display:flex;align-items:center;gap:8px;
   padding:10px 14px;
-  border-radius:var(--radius) var(--radius) 0 0;
+  border-radius:var(--radius-sm) var(--radius-sm) 0 0;
   font-size:11px;font-weight:700;
   font-family:'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;
 }
@@ -473,7 +475,7 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
 .cron-body{
   border:1px solid var(--border);border-top:none;
   border-radius:0 0 var(--radius) var(--radius);
-  overflow:hidden;background:var(--surface);
+  overflow:hidden;background:var(--surface); /* Keep surface for body */
 }
 .cron-row{
   padding:11px 14px;border-top:1px solid var(--border);
@@ -481,7 +483,7 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
   transition:background .15s;
 }
 .cron-row:first-child{border-top:none}
-.cron-row:hover{background:rgba(255,255,255,.03)}
+.cron-row:hover{background:rgba(255,255,255,.04)} /* Slightly more visible hover */
 .cron-row.vencida{background:rgba(240,82,82,.04)}
 .cron-row.por-vencer{background:rgba(245,158,11,.04)}
 .cron-row.pendiente{background:transparent}
@@ -509,7 +511,7 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
 .btn-cuota{
   flex-shrink:0;padding:5px 13px;
   border-radius:20px;font-size:11px;font-weight:600;
-  cursor:pointer;border:1px solid transparent;
+  cursor:pointer;border:1px solid var(--border);
   transition:all .2s;font-family:'DM Sans',sans-serif;
 }
 .btn-cuota.all{background:var(--surface2);color:var(--text3);border-color:var(--border2)}
@@ -524,8 +526,8 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
 /* ── HERO BANNER (tarjeta principal resumen) ── */
 .hero-banner{
   background:linear-gradient(135deg, #161A2C 0%, #1E2440 50%, #141C30 100%);
-  border:1px solid rgba(201,168,76,.25);
-  border-radius:var(--radius-lg);
+  border:1px solid var(--gold-glow); /* Use gold-glow for border */
+  border-radius:var(--radius); /* Slightly smaller radius for hero banner */
   padding:20px 18px;
   margin-bottom:12px;
   position:relative;overflow:hidden;
@@ -540,13 +542,13 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
 .hero-banner-label{
   font-family:'Inter',sans-serif;
   font-size:9px;font-weight:700;
-  color:var(--gold);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--gold);letter-spacing:.16em;text-transform:uppercase; /* Slightly less letter spacing */
   margin-bottom:4px;
 }
 .hero-banner-value{
   font-family:'Inter',sans-serif;
-  font-size:30px;font-weight:800;
-  color:var(--text);line-height:1;
+  font-size:28px;font-weight:800; /* Slightly smaller value */
+  color:var(--text);line-height:1.1; /* Slightly more line height */
   margin-bottom:8px;
 }
 .hero-banner-sub{
@@ -555,6 +557,41 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
   border-top:1px solid var(--border);
   padding-top:10px;margin-top:4px;
 }
+
+/* ── MODAL ── */
+.modal-bg{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.7);
+  z-index:200;
+  display:none;
+  align-items:flex-start;
+  justify-content:center;
+  overflow-y:auto;
+  padding:40px 15px;
+  backdrop-filter:blur(5px);
+}
+.modal-bg.visible{display:flex;animation:fadeUp .3s ease}
+.modal-content{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  width:100%;
+  max-width:800px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);
+  position:relative;
+}
+.modal-header{
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.modal-title{font-size:14px;font-weight:700;color:var(--text);font-family:'Inter',sans-serif}
+.modal-close{
+  background:none;border:none;color:var(--text3);
+  font-size:24px;cursor:pointer;line-height:1;
+  padding:0 5px;
+}
+.modal-body{padding:18px}
 </style>
 </head>
 <body>
@@ -583,6 +620,7 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
   <button class="tab" onclick="mostrarPagina('cronograma',this)">Cuotas</button>
   <button class="tab" onclick="mostrarPagina('cartera',this)">Cartera</button>
   <button class="tab" onclick="mostrarPagina('proyecciones',this)">Proyecciones</button>
+  <button class="tab" onclick="mostrarPagina('preventa',this)">Preventa</button>
 </div>
 
 <div class="filtros">
@@ -630,6 +668,21 @@ tr:hover td{background:var(--gold-dim);transition:background .15s}
   <div id="proyecciones-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
 </div>
 
+<div class="page" id="page-preventa">
+  <div id="preventa-content"><div class="estado"><div class="estado-icon">⏳</div><div class="estado-msg">Cargando datos...</div></div></div>
+</div>
+
+<div class="modal-bg" id="modal-preventa" onclick="cerrarModalPreventa(event)">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-preventa-title"></div>
+      <button class="modal-close" onclick="cerrarModalPreventa(event)">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-preventa-body">
+    </div>
+  </div>
+</div>
+
 <div class="footer" id="footer-ts">◆ Colindante Inmobiliaria · Dashboard Gerencial</div>
 
 <script>
@@ -643,6 +696,7 @@ const SHEET_CRON = 'Cronograma';
 const SHEET_PROY = 'Proy_Flujo';
 const SHEET_META = 'Meta';
 const SHEET_CMETA = 'Comercial_Meta';
+const SHEET_PREV_META = 'Preventa_Meta';
 const TC = 3.477;
 
 // ── Tema claro/oscuro ────────────────────────────────────────
@@ -675,7 +729,7 @@ function applyChartDefaults(){
 }
 applyChartDefaults();
 
-let rawMC = [], rawAB = [], rawCron = [], rawProy = [], rawMeta = [], rawCMeta = [], filtrado = [], filtradoCron = [];
+let rawMC = [], rawAB = [], rawCron = [], rawProy = [], rawMeta = [], rawCMeta = [], rawPrevMeta = [], filtrado = [], filtradoCron = [];
 let filCuota = '';
 let filTipoCredito = '';
 let chartsCreados = {};
@@ -766,13 +820,14 @@ async function fetchSheet(sheetName){
 async function cargarDatos(){
   document.getElementById('spin-icon').classList.add('spinning');
   try{
-    [rawMC, rawAB, rawCron, rawProy, rawMeta, rawCMeta] = await Promise.all([
+    [rawMC, rawAB, rawCron, rawProy, rawMeta, rawCMeta, rawPrevMeta] = await Promise.all([
       fetchSheet(SHEET_MC), 
       fetchSheet(SHEET_AB), 
       fetchSheet(SHEET_CRON),
       fetchSheet(SHEET_PROY),
       fetchSheet(SHEET_META),
-      fetchSheet(SHEET_CMETA)
+      fetchSheet(SHEET_CMETA),
+      fetchSheet(SHEET_PREV_META)
     ]);
     
     // Poblar filtros
@@ -790,7 +845,7 @@ async function cargarDatos(){
       '◆ Colindante · Última actualización: '+ahora.toLocaleString('es-PE');
   }catch(e){
     console.error(e);
-    ['resumen','proyectos','graficos','cobranza','cronograma','cartera','proyecciones'].forEach(p=>{
+    ['resumen','proyectos','graficos','cobranza','cronograma','cartera','proyecciones','preventa'].forEach(p=>{
       document.getElementById(p+'-content').innerHTML=
         `<div class="estado"><div class="estado-icon">⚠️</div><div class="estado-msg">Error al cargar datos.<br>Verifica que el SHEET_ID sea correcto y el Sheet sea público.</div></div>`;
     });
@@ -825,6 +880,7 @@ function aplicarFiltros(){
   renderCronograma();
   renderCartera();
   renderProyecciones();
+  renderPreventa();
 }
 
 function setCuotaFiltro(valor, btn){
@@ -2224,13 +2280,13 @@ function renderProyecciones(){
     const nombreMes = MESES[parseInt(m)-1] + ' ' + y;
 
     return `<tr>
-      <td class="proy-name">${nombreMes}</td>
-      <td style="text-align:center">${d.vUnid}</td>
-      <td style="text-align:right">${fmt(d.vMonto)}</td>
-      <td style="text-align:right;color:var(--verde);font-weight:600">${fmt(d.iRealizado)}</td>
-      <td style="text-align:right">${fmt(d.iProy)}</td>
-      <td style="text-align:right">${fmt(d.iCuotas)}</td>
-      <td style="text-align:right;font-weight:600;color:var(--azul-med)">${fmt(totalIngreso)}</td>
+      <td class="proy-name font-mono">${nombreMes}</td>
+      <td class="font-mono" style="text-align:center">${d.vUnid}</td>
+      <td class="font-mono" style="text-align:right">${fmt(d.vMonto)}</td>
+      <td class="font-mono" style="text-align:right;color:var(--verde);font-weight:600">${fmt(d.iRealizado)}</td>
+      <td class="font-mono" style="text-align:right">${fmt(d.iProy)}</td>
+      <td class="font-mono" style="text-align:right">${fmt(d.iCuotas)}</td>
+      <td class="font-mono" style="text-align:right;font-weight:600;color:var(--azul-med)">${fmt(totalIngreso)}</td>
     </tr>`;
   }).join('');
 
@@ -2294,6 +2350,271 @@ function renderProyecciones(){
   `;
   document.getElementById('proyecciones-content').innerHTML = html;
 }
+
+// ════════════════════════════════════════════════════════════
+// PÁGINA 7: PREVENTA
+// ════════════════════════════════════════════════════════════
+function renderPreventa() {
+  const fp = document.getElementById('fil-proyecto').value;
+  const proyectos = [...new Set(rawMC.map(r => str(r['PROYECTO'])).filter(Boolean))].sort();
+  const listaProyectos = fp ? [fp] : proyectos;
+
+  let html = `
+    <div class="sec-label">Avance de Preventa por Proyecto</div>
+    <div style="display:flex;gap:15px;margin-bottom:15px;font-size:11px;color:var(--text2)">
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--verde)"></span>Válido</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--gold)"></span>Proyectado</span>
+    </div>`;
+
+  if (listaProyectos.length === 0) {
+    html += '<div class="empty">No hay proyectos para mostrar.</div>';
+    document.getElementById('preventa-content').innerHTML = html;
+    return;
+  }
+
+  listaProyectos.forEach(p => {
+    const metaPreventa = rawPrevMeta.find(m => str(m['PROYECTO']) === p);
+    const metaMonto = metaPreventa ? num(metaPreventa['META PREVENTA S/']) : 0;
+
+    let montoPreventa = 0;
+    let unidadesPreventa = 0;
+    let montoProyeccion = 0;
+    let unidadesProyeccion = 0;
+
+    const unidadesVendidas = rawMC.filter(r => 
+      str(r['PROYECTO']) === p && 
+      ['VENDIDO', 'SEPARADO'].includes(str(r['SITUACION'])) &&
+      str(r['INMUEBLE']) === 'Departamento' // Solo dptos cuentan para preventa
+    );
+
+    unidadesVendidas.forEach(u => {
+      const tipoCredito = str(u['Tipo de  Credito']).toLowerCase();
+      const valorUnidad = num(u['VALOR S/']);
+      const ingresos = num(u['Ingresos  S/.']);
+      const pctPagado = valorUnidad > 0 ? (ingresos / valorUnidad) * 100 : 0;
+      const tieneCarta = str(u['CARTA APROB.']).toLowerCase() === 'si';
+
+      let califica = false;
+
+      if (tipoCredito.includes('directo')) {
+        if (pctPagado >= 30) {
+          califica = true;
+        }
+      } else if (tipoCredito.includes('hipotecario') || tipoCredito.includes('ahorro casa')) {
+        if (tieneCarta && pctPagado >= 10) {
+          califica = true;
+        }
+      } else if (tipoCredito.includes('contado')) {
+        // Para 'Contado', asumimos que califica si está vendido.
+        califica = true;
+      }
+
+      if (califica) {
+        montoPreventa += valorUnidad;
+        unidadesPreventa++;
+      } else {
+        montoProyeccion += valorUnidad;
+        unidadesProyeccion++;
+      }
+    });
+
+    const pctPreventa = metaMonto > 0 ? Math.min((montoPreventa / metaMonto) * 100, 100) : 0;
+    const pctProyeccion = metaMonto > 0 ? Math.min((montoProyeccion / metaMonto) * 100, 100 - pctPreventa) : 0;
+    const pctTotal = pctPreventa + pctProyeccion;
+
+    html += `
+      <div class="prog-kpi" style="margin-bottom:12px; cursor:pointer;" onclick="mostrarDetallePreventa('${p}')">
+        <div class="prog-kpi-header">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">${p}</div>
+            <div class="prog-kpi-label">Meta de Preventa: ${metaMonto > 0 ? fmt(metaMonto) : 'No definida'}</div>
+          </div>
+          <div class="prog-kpi-pct" style="color:${pctTotal >= 100 ? 'var(--verde)' : 'var(--gold)'}">${pctTotal.toFixed(1)}%</div>
+        </div>
+        
+        <div class="prog-bg" style="height:6px;margin-bottom:8px;">
+          <div style="display:flex; height:100%;">
+            <div class="prog-fill" style="width:${pctPreventa}%; background:var(--verde); box-shadow:0 0 8px var(--verde-dim);"></div>
+            <div class="prog-fill" style="width:${pctProyeccion}%; background:var(--gold); box-shadow:0 0 8px var(--gold-dim);"></div>
+          </div>
+        </div>
+
+        <div class="prog-kpi-values">
+          <span class="prog-kpi-real">Alcanzado: ${fmt(montoPreventa)} (${unidadesPreventa} unid.)</span>
+          <span class="prog-kpi-meta">Unidades que califican: ${unidadesPreventa}</span>
+        </div>
+      </div>
+    `;
+  });
+
+  if (listaProyectos.length > 1) {
+     html += `<div class="empty" style="padding: 20px 0;">Fin de la lista de proyectos.</div>`;
+  }
+
+  document.getElementById('preventa-content').innerHTML = html;
+
+  // --- Cuadro resumen por estado y proyecto ---
+  const summaryData = {};
+  const allStates = [
+    'Válido',
+    'Pend. Carta de Aprobación',
+    'Pend. Cuota Inicial',
+    'Pend. Cuota Inicial + CA',
+    'Proyección'
+  ];
+
+  // Initialize summaryData structure
+  allStates.forEach(state => {
+    summaryData[state] = {};
+    listaProyectos.forEach(p => {
+      summaryData[state][p] = 0;
+    });
+  });
+
+  // Aggregate data for the summary table
+  const allUnitsForSummary = rawMC.filter(r =>
+    ['VENDIDO', 'SEPARADO'].includes(str(r['SITUACION'])) &&
+    str(r['INMUEBLE']) === 'Departamento' &&
+    (fp ? str(r['PROYECTO']) === fp : true) // Apply global project filter if any
+  );
+
+  allUnitsForSummary.forEach(u => {
+    const proyecto = str(u['PROYECTO']);
+    const valorUnidad = num(u['VALOR S/']);
+    const { status } = getEstadoPreventa(u); // Reuse the existing logic
+
+    if (summaryData[status] && summaryData[status][proyecto] !== undefined) {
+      summaryData[status][proyecto] += valorUnidad;
+    }
+  });
+
+  // Generate HTML for the summary table
+  let summaryTableHtml = `
+    <div class="sec-label" style="margin-top:24px">Resumen por Estado y Proyecto</div>
+    <div class="tbl-wrap">
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Estado</th>
+              ${listaProyectos.map(p => `<th style="text-align:right; font-size: 11px;">${p}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  allStates.forEach(state => {
+    summaryTableHtml += `<tr><td>${state}</td>`;
+    listaProyectos.forEach(p => {
+      summaryTableHtml += `<td style="text-align:right">${fmt(summaryData[state][p])}</td>`;
+    });
+    summaryTableHtml += `</tr>`;
+  });
+
+  summaryTableHtml += `
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  html += summaryTableHtml; // Append to the existing HTML for the preventa page
+  document.getElementById('preventa-content').innerHTML = html;
+}
+
+// ── MODAL DETALLE PREVENTA ───────────────────────────────────
+function mostrarDetallePreventa(proyecto) {
+  document.getElementById('modal-preventa-title').textContent = `Detalle de Preventa: ${proyecto}`;
+  
+  const unidades = rawMC.filter(r => 
+    str(r['PROYECTO']) === proyecto && 
+    ['VENDIDO', 'SEPARADO'].includes(str(r['SITUACION'])) &&
+    str(r['INMUEBLE']) === 'Departamento'
+  ).sort((a, b) => {
+    // Ordenar por Válido > Pendiente > No Califica
+    return (getEstadoPreventa(a).sortOrder || 9) - (getEstadoPreventa(b).sortOrder || 9);
+  });
+
+  let bodyHtml = `
+    <div class="tbl-wrap">
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th style="text-align:right">Valor S/</th>
+              <th style="text-align:right">Pagado</th>
+              <th>Tipo Crédito</th>
+              <th>Carta Aprob.</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  if (unidades.length === 0) {
+    bodyHtml += '<tr><td colspan="6" class="empty">No hay unidades vendidas o separadas para este proyecto.</td></tr>';
+  } else {
+    unidades.forEach(u => {
+      const { status, color } = getEstadoPreventa(u);
+      bodyHtml += `
+        <tr>
+          <td>${str(u['Nombre del Cliente'])}<br><small style="color:var(--text3)">Dpto ${str(u['DPTO'])}</small></td>
+          <td style="text-align:right">${fmt(num(u['VALOR S/']))}</td>
+          <td style="text-align:right">${fmt(num(u['Ingresos  S/.']))}</td>
+          <td>${str(u['Tipo de  Credito'])}</td>
+          <td>${str(u['CARTA APROB.']) || 'No Req.'}</td>
+          <td style="font-weight:600; color:${color}">${status}</td>
+        </tr>
+      `;
+    });
+  }
+
+  bodyHtml += `</tbody></table></div></div>`;
+  document.getElementById('modal-preventa-body').innerHTML = bodyHtml;
+  document.getElementById('modal-preventa').classList.add('visible');
+}
+
+function getEstadoPreventa(unidad) {
+  const tipoCredito = str(unidad['Tipo de  Credito']).toLowerCase();
+  const valorUnidad = num(unidad['VALOR S/']);
+  const ingresos = num(unidad['Ingresos  S/.']);
+  const pctPagado = valorUnidad > 0 ? (ingresos / valorUnidad) * 100 : 0;
+  const tieneCarta = str(unidad['CARTA APROB.']).toLowerCase() === 'si';
+
+  let faltaCI = false, faltaCA = false;
+
+  if (tipoCredito.includes('directo')) {
+    if (pctPagado < 30) faltaCI = true;
+  } else if (tipoCredito.includes('hipotecario') || tipoCredito.includes('ahorro casa')) {
+    if (pctPagado < 10) faltaCI = true;
+    if (!tieneCarta) faltaCA = true;
+  } else if (tipoCredito.includes('contado')) {
+    // Contado siempre es válido si está vendido/separado
+    return { status: 'Válido', color: 'var(--verde)', sortOrder: 1 };
+  }
+
+  if (!faltaCI && !faltaCA) {
+    return { status: 'Válido', color: 'var(--verde)', sortOrder: 1 };
+  }
+  if (faltaCI && faltaCA) {
+    return { status: 'Pend. Cuota Inicial + CA', color: 'var(--rojo)', sortOrder: 4 };
+  }
+  if (faltaCI) {
+    return { status: 'Pend. Cuota Inicial', color: 'var(--amber)', sortOrder: 3 };
+  }
+  if (faltaCA) {
+    return { status: 'Pend. Carta de Aprobación', color: 'var(--amber)', sortOrder: 2 };
+  }
+  return { status: 'Proyección', color: 'var(--text3)', sortOrder: 5 }; // Fallback
+}
+
+function cerrarModalPreventa(event) {
+  if(event.target.id === 'modal-preventa' || event.target.classList.contains('modal-close')) {
+    document.getElementById('modal-preventa').classList.remove('visible');
+  }
+}
+
 // ── Navegación ───────────────────────────────────────────────
 function mostrarPagina(id, btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -2302,7 +2623,7 @@ function mostrarPagina(id, btn){
   btn.classList.add('active');
   const filCuotaWrap = document.getElementById('fil-cuota-wrap');
   if(filCuotaWrap) filCuotaWrap.style.display = id==='cronograma' ? 'flex' : 'none';
-  
+
   if(id !== 'cobranza'){
     window.filTipoCredito = '';
   }
