@@ -1681,8 +1681,8 @@ function renderPreventa() {
   let html = `
     <div class="sec-label">Avance de Preventa por Proyecto</div>
     <div style="display:flex;gap:15px;margin-bottom:15px;font-size:11px;color:var(--text2)">
-      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--verde)"></span>Válido</span>
-      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--gold)"></span>Proyectado</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--verde)"></span>Válido (Califica)</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--accent)"></span>Proyectado (No califica aún)</span>
     </div>`;
 
   if (listaProyectos.length === 0) {
@@ -1754,7 +1754,7 @@ function renderPreventa() {
         <div class="prog-bg" style="height:6px;margin-bottom:8px;">
           <div style="display:flex; height:100%;">
             <div class="prog-fill" style="width:${pctPreventa}%; background:var(--verde); box-shadow:0 0 8px var(--verde-dim);"></div>
-            <div class="prog-fill" style="width:${pctProyeccion}%; background:var(--gold); box-shadow:0 0 8px var(--gold-dim);"></div>
+            <div class="prog-fill" style="width:${pctProyeccion}%; background:var(--accent); box-shadow:0 0 8px var(--accent-dim);"></div>
           </div>
         </div>
 
