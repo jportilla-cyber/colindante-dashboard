@@ -674,7 +674,7 @@ function renderGraficos(){
     </div>
 
     <!-- Gráfico nuevo: Meta Comercial vs Real MENSUAL (barras) -->
-    <div class="sec-label" style="margin-top:16px">Meta Comercial vs Real — Ventas Mensuales</div>
+    <div class="sec-label" style="margin-top:16px">Proyeccion Comercial vs Real — Ventas Mensuales</div>
     <div class="chart-card">
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:#A78BFA;border-radius:2px"></span>Meta Mensual</span>
@@ -684,7 +684,7 @@ function renderGraficos(){
     </div>
 
     <!-- Gráfico nuevo: Meta Comercial vs Real (Unidades acumuladas) -->
-    <div class="sec-label" style="margin-top:16px">Meta Comercial vs Real — Unidades Acumuladas</div>
+    <div class="sec-label" style="margin-top:16px">Proyeccion Comercial vs Real — Unidades Acumuladas</div>
     <div class="chart-card">
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:#A78BFA"></span>Meta Comercial Acum.</span>
