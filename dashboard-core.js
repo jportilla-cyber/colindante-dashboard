@@ -361,6 +361,13 @@ function renderProyectos(){
     const vendidosDptos = dptos.filter(r=>str(r['SITUACION'])==='VENDIDO');
     const totalAreaVendida = vendidosDptos.reduce((a,r)=>a+num(r['Area  Ocupada']),0);
     const precioM2 = totalAreaVendida>0 ? Math.round(valVendidoProyecto/totalAreaVendida) : null;
+    const metaPrevProy = rawPrevMeta.find(m=>str(m['PROYECTO'])===p);
+    const fechaInicioVenta = metaPrevProy ? parseFechaExcel(metaPrevProy['INICIO DE VENTA']) : null;
+    const ahora = new Date();
+    const mesesVenta = fechaInicioVenta
+      ? Math.max(1, (ahora.getFullYear()-fechaInicioVenta.getFullYear())*12 + (ahora.getMonth()-fechaInicioVenta.getMonth()))
+      : null;
+    const velocidadVentas = (mesesVenta!==null && v>0) ? (v/mesesVenta).toFixed(1) : null;
 
     const accentColor = pct>=10 ? 'accent-verde' : pct>=5 ? 'accent-amber' : 'accent-rojo';
 
@@ -405,12 +412,20 @@ function renderProyectos(){
         <div class="kpi accent-amber" style="border-radius:0;border-top:none"><div class="kpi-l">Por cobrar</div><div class="kpi-v warn money">${fmt(xCobrar)}</div></div>
       </div>
 
-      <!-- Precio por m² vendido -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-top:none;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:11px;color:var(--text3)">Precio promedio/m² vendido</span>
-        <span style="font-size:16px;font-weight:700;font-family:var(--font-mono);color:var(--accent)">
-          ${precioM2!==null ? 'S/ '+precioM2.toLocaleString('es-PE') : '—'}
-        </span>
+      <!-- Precio por m² y velocidad de ventas -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-top:none;padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:10px;color:var(--text3);font-weight:500">Precio promedio/m² vendido</span>
+          <span style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:var(--accent)">
+            ${precioM2!==null ? 'S/ '+precioM2.toLocaleString('es-PE') : '—'}
+          </span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;border-left:1px solid var(--border);padding-left:12px">
+          <span style="font-size:10px;color:var(--text3);font-weight:500">Velocidad de ventas</span>
+          <span style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:var(--gold)">
+            ${velocidadVentas!==null ? velocidadVentas+' <span style="font-size:11px;font-weight:400;color:var(--text3)">dpto/mes</span>' : '—'}
+          </span>
+        </div>
       </div>
 
       <!-- Desestimientos -->
