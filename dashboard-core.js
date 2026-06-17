@@ -591,15 +591,43 @@ function renderGraficos(){
 
   // ── Acumulados desde rawMeta (para gráficos 3 y 4) ───────
   const metaVentasProyU = {}, metaVentasProyS = {}, metaIngresosProyS = {};
+
+  // Detectar dinámicamente la columna de proyecto en rawMeta
+  let metaProyCol = null;
+  if(rawMeta.length > 0) {
+    const metaKeys = Object.keys(rawMeta[0]);
+    const proyKnown = new Set(rawMC.map(r=>str(r['PROYECTO'])).filter(Boolean));
+    // Primero intentar nombres comunes
+    for(const c of ['PROYECTO','Proyecto','proyecto','PROYECTO ','Proyecto ']) {
+      if(metaKeys.includes(c) && rawMeta.slice(0,15).some(r=>proyKnown.has(str(r[c])))) {
+        metaProyCol = c; break;
+      }
+    }
+    // Si no, escanear todas las columnas buscando valores que coincidan con proyectos conocidos
+    if(!metaProyCol) {
+      for(const k of metaKeys) {
+        if(rawMeta.slice(0,15).some(r=>proyKnown.has(str(r[k])))) {
+          metaProyCol = k; break;
+        }
+      }
+    }
+    console.log('rawMeta: columna proyecto →', metaProyCol, '| columnas:', metaKeys.join(', '));
+  }
+
   rawMeta.forEach(r => {
-    if(fp && str(r['PROYECTO']||r['Proyecto'])!==fp) return;
-    if(str(r['Estatus']).toUpperCase()==='VENDIDO') return;
+    if(fp) {
+      const proyMeta = metaProyCol ? str(r[metaProyCol]) : '';
+      if(metaProyCol && proyMeta !== fp) return;
+    }
     // Ventas proyectadas por mes de inicio
     const inicio = r['Inicio de Venta Proy.'];
     let k = null;
     if(typeof inicio==='string'&&inicio.startsWith('Date(')) {
       const p=inicio.substring(5,inicio.length-1).split(',');
       k=`${p[0]}-${String(parseInt(p[1])+1).padStart(2,'0')}`;
+    } else if(typeof inicio==='number') {
+      const d = parseFechaExcel(inicio);
+      if(d) k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     } else if(inicio) {
       const d=new Date(inicio);
       if(!isNaN(d)) k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -643,6 +671,51 @@ function renderGraficos(){
     acIRealS += ingresosRealesS[k]||0; acIRealArr.push(k <= mesActualKey ? Math.round(acIRealS) : null);
     acIProyS += ingresosProyS[k]||0;  acIProyArr.push(Math.round(acIProyS));
   });
+
+  // ── Lectura: valores de mes actual y mes anterior ─────────
+  const _dp = new Date(); _dp.setMonth(_dp.getMonth()-1);
+  const mesPasadoKey = `${_dp.getFullYear()}-${String(_dp.getMonth()+1).padStart(2,'0')}`;
+  const idxActual = activeKeys.indexOf(mesActualKey);
+  const idxPasado = activeKeys.indexOf(mesPasadoKey);
+  const mesActualLabel = idxActual>=0 ? activeLabels[idxActual] : '';
+  const mesPasadoLabel = idxPasado>=0 ? activeLabels[idxPasado] : '';
+  const lU = {
+    metaHoy:    idxActual>=0 && acMetaVUArr[idxActual]!=null ? acMetaVUArr[idxActual] : null,
+    metaPasado: idxPasado>=0 && acMetaVUArr[idxPasado]!=null ? acMetaVUArr[idxPasado] : null,
+    realHoy:    idxActual>=0 && acVRealUArr[idxActual]!=null  ? acVRealUArr[idxActual]  : null,
+    realPasado: idxPasado>=0 && acVRealUArr[idxPasado]!=null  ? acVRealUArr[idxPasado]  : null,
+  };
+  const lI = {
+    metaHoy:    idxActual>=0 && acMetaISArr[idxActual]!=null ? acMetaISArr[idxActual] : null,
+    metaPasado: idxPasado>=0 && acMetaISArr[idxPasado]!=null ? acMetaISArr[idxPasado] : null,
+    realHoy:    idxActual>=0 && acIRealArr[idxActual]!=null  ? acIRealArr[idxActual]  : null,
+    realPasado: idxPasado>=0 && acIRealArr[idxPasado]!=null  ? acIRealArr[idxPasado]  : null,
+  };
+
+  // ── Textos de interpretación para gráficos 3 y 4 ─────────
+  const _pctLec = (r,m) => (r!=null&&m!=null&&m>0) ? Math.round(Math.abs(r/m-1)*1000)/10 : null;
+  const _colLec = (r,m) => (r!=null&&m!=null&&r>=m) ? 'var(--verde)' : 'var(--rojo)';
+  const _dirLec = (r,m) => (r!=null&&m!=null&&r>=m) ? 'por encima' : 'por debajo';
+
+  let interp3 = '';
+  if(lU.realHoy!=null && lU.metaHoy!=null) {
+    const p = _pctLec(lU.realHoy, lU.metaHoy);
+    interp3 += `A día de hoy se tienen <strong style="color:${C.acumReal}">${lU.realHoy} unidades</strong> vendidas acumuladas, la proyección para ${mesActualLabel||'este mes'} es de <strong style="color:${C.acumMeta}">${lU.metaHoy} unidades</strong>, por lo que se encuentra <strong style="color:${_colLec(lU.realHoy,lU.metaHoy)}">${p!=null?p+'%':'—'} ${_dirLec(lU.realHoy,lU.metaHoy)} de la meta</strong>.`;
+  }
+  if(lU.realPasado!=null && lU.metaPasado!=null) {
+    const p = _pctLec(lU.realPasado, lU.metaPasado);
+    interp3 += ` El mes pasado${mesPasadoLabel?' ('+mesPasadoLabel+')':''} se tenían <strong style="color:${C.acumReal}">${lU.realPasado} ventas</strong> acumuladas y la proyección era de <strong style="color:${C.acumMeta}">${lU.metaPasado} unidades</strong>, cerrando el mes <strong style="color:${_colLec(lU.realPasado,lU.metaPasado)}">${p!=null?p+'%':'—'} ${_dirLec(lU.realPasado,lU.metaPasado)} de la meta</strong>.`;
+  }
+  if(!interp3) interp3 = 'Sin datos suficientes para la interpretación.';
+
+  let interp4 = '';
+  if(lI.realHoy!=null && lI.metaHoy!=null) {
+    const diff4 = lI.realHoy - lI.metaHoy;
+    const col4  = diff4>=0 ? 'var(--verde)' : 'var(--rojo)';
+    const dir4  = diff4>=0 ? 'por encima' : 'por debajo';
+    interp4 = `Se tienen ingresos acumulados de <strong style="color:${C.acumReal}">${fmt(lI.realHoy)}</strong> y la meta acumulada es de <strong style="color:${C.acumMeta}">${fmt(lI.metaHoy)}</strong>, estando <strong style="color:${col4}">${fmt(Math.abs(diff4))} ${dir4} de la meta</strong>.`;
+  }
+  if(!interp4) interp4 = 'Sin datos suficientes para la interpretación.';
 
   // ── KPIs resumen ──────────────────────────────────────────
   const totalVR = Object.values(ventasRealesS).reduce((a,b)=>a+b,0);
@@ -716,6 +789,7 @@ function renderGraficos(){
         <span class="legend-item"><span class="legend-dot" style="background:${C.acumReal}"></span>Real Acum.</span>
       </div>
       <div class="ch" style="height:220px"><canvas id="ch-acum-unid"></canvas></div>
+      <p style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:0">${interp3}</p>
     </div>
 
     <!-- Gráfico 4: Acumulado Ingresos Proy vs Real -->
@@ -726,6 +800,7 @@ function renderGraficos(){
         <span class="legend-item"><span class="legend-dot" style="background:${C.acumReal}"></span>Ingresos Real Acum.</span>
       </div>
       <div class="ch" style="height:220px"><canvas id="ch-acum-s"></canvas></div>
+      <p style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:0">${interp4}</p>
     </div>
   `;
 
@@ -980,30 +1055,65 @@ function renderGraficos(){
     options: baseOpts('u')
   });
 
+  // Plugin inline: mes actual destacado, todos los pasados tenues, posición bajo el punto
+  const ptLabelsPlugin = (iA, fmtFn) => ({
+    id: 'ptLabels',
+    afterDatasetsDraw(chart) {
+      const ctx = chart.ctx;
+      const nPts = chart.data.labels.length;
+      chart.data.datasets.forEach((ds, di) => {
+        const meta = chart.getDatasetMeta(di);
+        if(meta.hidden) return;
+        for(let idx = 0; idx < nPts; idx++) {
+          // Solo meses actuales y pasados
+          if(iA >= 0 && idx > iA) continue;
+          const val = ds.data[idx];
+          if(val == null) continue;
+          const pt = meta.data[idx];
+          if(!pt) continue;
+          const isCurrent = idx === iA;
+          ctx.save();
+          ctx.globalAlpha = isCurrent ? 0.9 : 0.28;
+          ctx.font = (isCurrent ? 'bold 10' : '9') + 'px ' + (Chart.defaults.font.family || 'sans-serif');
+          ctx.fillStyle = String(ds.borderColor);
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(fmtFn(val), pt.x, pt.y + 4);
+          ctx.restore();
+        }
+      });
+    }
+  });
+  const ptRadii = (len, iA, iP) => Array.from({length: len}, (_, i) => i===iA ? 5 : i===iP ? 4 : 2);
+  const _len = activeLabels.length;
+
   // Chart 3 – Acumulado Unidades (línea) — Meta vs Real
   chartsCreados['ch-acum-unid'] = new Chart(document.getElementById('ch-acum-unid'),{
     type:'line',
     data:{
       labels: activeLabels,
       datasets:[
-        {label:'Meta Acum.',  data:acMetaVUArr,  borderColor:C.acumMeta, backgroundColor:C.acumMeta+'22', fill:true, tension:0.3, pointRadius:3, spanGaps:false},
-        {label:'Real Acum.',  data:acVRealUArr,  borderColor:C.acumReal,  backgroundColor:C.acumReal+'22',  fill:true, tension:0.3, pointRadius:3, spanGaps:false},
+        {label:'Meta Acum.',  data:acMetaVUArr,  borderColor:C.acumMeta, backgroundColor:C.acumMeta+'22', fill:true, tension:0.3, pointRadius:ptRadii(_len,idxActual,idxPasado), spanGaps:false},
+        {label:'Real Acum.',  data:acVRealUArr,  borderColor:C.acumReal,  backgroundColor:C.acumReal+'22',  fill:true, tension:0.3, pointRadius:ptRadii(_len,idxActual,idxPasado), spanGaps:false},
       ]
     },
-    options: baseOpts('u')
+    options: baseOpts('u'),
+    plugins: [ptLabelsPlugin(idxActual, v => String(v)+' ud.')]
   });
 
   // Chart 4 – Acumulado Ingresos S/ (línea) — Meta vs Real
+  const _fmtSc = v => v>=1e6?'S/'+(v/1e6).toFixed(1)+'M':v>=1e3?'S/'+(v/1e3).toFixed(0)+'k':'S/'+v;
   chartsCreados['ch-acum-s'] = new Chart(document.getElementById('ch-acum-s'),{
     type:'line',
     data:{
       labels: activeLabels,
       datasets:[
-        {label:'Ingresos Meta Acum.', data:acMetaISArr, borderColor:C.acumMeta, backgroundColor:C.acumMeta+'22', fill:true, tension:0.3, pointRadius:3, spanGaps:false},
-        {label:'Ingresos Real Acum.',  data:acIRealArr,  borderColor:C.acumReal,  backgroundColor:C.acumReal+'22',  fill:true, tension:0.3, pointRadius:3, spanGaps:false},
+        {label:'Ingresos Meta Acum.', data:acMetaISArr, borderColor:C.acumMeta, backgroundColor:C.acumMeta+'22', fill:true, tension:0.3, pointRadius:ptRadii(_len,idxActual,idxPasado), spanGaps:false},
+        {label:'Ingresos Real Acum.',  data:acIRealArr,  borderColor:C.acumReal,  backgroundColor:C.acumReal+'22',  fill:true, tension:0.3, pointRadius:ptRadii(_len,idxActual,idxPasado), spanGaps:false},
       ]
     },
-    options: baseOpts('s')
+    options: baseOpts('s'),
+    plugins: [ptLabelsPlugin(idxActual, _fmtSc)]
   });
 }
 
