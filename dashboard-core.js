@@ -358,6 +358,9 @@ function renderProyectos(){
     const valVendProyecto = dptos.filter(r=>['VENDIDO','SEPARADO'].includes(str(r['SITUACION']))).reduce((a,r)=>a+num(r['VALOR S/']),0);
     const valPresupuestadoProy = dptos.reduce((a,r)=>a+num(r['Presupuestado S/']),0);
     const desest = getUniqueDesestimientosCount(rawAB, p);
+    const vendidosDptos = dptos.filter(r=>str(r['SITUACION'])==='VENDIDO');
+    const totalAreaVendida = vendidosDptos.reduce((a,r)=>a+num(r['Area  Ocupada']),0);
+    const precioM2 = totalAreaVendida>0 ? Math.round(valVendidoProyecto/totalAreaVendida) : null;
 
     const accentColor = pct>=10 ? 'accent-verde' : pct>=5 ? 'accent-amber' : 'accent-rojo';
 
@@ -400,6 +403,14 @@ function renderProyectos(){
         <div class="kpi accent-blue" style="border-radius:0;border-top:none"><div class="kpi-l">Valor Negociado</div><div class="kpi-v money" style="color:var(--accent)">${fmt(valVendProyecto)}</div></div>
         <div class="kpi accent-gold" style="border-radius:0;border-top:none"><div class="kpi-l">Ingresos recibidos</div><div class="kpi-v money" style="color:var(--gold)">${fmt(ingresos)}</div></div>
         <div class="kpi accent-amber" style="border-radius:0;border-top:none"><div class="kpi-l">Por cobrar</div><div class="kpi-v warn money">${fmt(xCobrar)}</div></div>
+      </div>
+
+      <!-- Precio por m² vendido -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-top:none;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:11px;color:var(--text3)">Precio promedio/m² vendido</span>
+        <span style="font-size:16px;font-weight:700;font-family:var(--font-mono);color:var(--accent)">
+          ${precioM2!==null ? 'S/ '+precioM2.toLocaleString('es-PE') : '—'}
+        </span>
       </div>
 
       <!-- Desestimientos -->
