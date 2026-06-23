@@ -717,6 +717,82 @@ function renderGraficos(){
   }
   if(!interp4) interp4 = 'Sin datos suficientes para la interpretación.';
 
+  // ── Meta Comercial (rawCMeta) — acumulado de unidades por mes ──
+  const metaComercialU = {};
+  if(rawCMeta.length > 0) {
+    const colsFecha = Object.keys(rawCMeta[0])[0];
+    const colsProyecto = Object.keys(rawCMeta[0]).slice(1);
+    rawCMeta.forEach(r => {
+      let k = null;
+      const v = r[colsFecha];
+      if(typeof v === 'string' && v.startsWith('Date(')) {
+        const p = v.substring(5, v.length-1).split(',');
+        k = `${p[0]}-${String(parseInt(p[1])+1).padStart(2,'0')}`;
+      } else if(typeof v === 'string' && v.trim()) {
+        const meses = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
+        const parts = v.trim().toLowerCase().split('-');
+        const mesNum = meses[parts[0]];
+        let anio = parseInt(parts[1]);
+        if(mesNum && !isNaN(anio)) {
+          if(anio < 100) anio += 2000;
+          k = `${anio}-${String(mesNum).padStart(2,'0')}`;
+        }
+      } else if(typeof v === 'number') {
+        const d = new Date((v - 25569) * 86400 * 1000);
+        k = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;
+      }
+      if(!k) return;
+      let total = 0;
+      colsProyecto.forEach(col => {
+        if(fp && col.trim() !== fp) return;
+        total += num(r[col]);
+      });
+      metaComercialU[k] = (metaComercialU[k] || 0) + total;
+    });
+  }
+  let acMCU = 0;
+  const acMCUArr = [];
+  activeKeys.forEach(k => {
+    acMCU += metaComercialU[k] || 0;
+    acMCUArr.push(acMCU);
+  });
+
+  // ── Interpretación: Ventas Mensuales Comercial vs Real ────
+  let interpMensual = '';
+  {
+    const realMes = ventasRealesU[mesActualKey] || 0;
+    const metaMes = metaComercialU[mesActualKey] || 0;
+    const realPas = ventasRealesU[mesPasadoKey] || 0;
+    const metaPas = metaComercialU[mesPasadoKey] || 0;
+    if(metaMes > 0 || realMes > 0) {
+      const p = metaMes > 0 ? _pctLec(realMes, metaMes) : null;
+      interpMensual += `Este mes${mesActualLabel?' ('+mesActualLabel+')':''} se han vendido <strong style="color:${C.ventas}">${realMes} unidad${realMes!==1?'es':''}</strong>, la meta mensual es de <strong style="color:#A78BFA">${metaMes} unidad${metaMes!==1?'es':''}</strong>${p!=null?', estando <strong style="color:'+_colLec(realMes,metaMes)+'">'+p+'% '+_dirLec(realMes,metaMes)+' de la meta</strong>':''}.`;
+    }
+    if(metaPas > 0 || realPas > 0) {
+      const p = metaPas > 0 ? _pctLec(realPas, metaPas) : null;
+      interpMensual += ` El mes pasado${mesPasadoLabel?' ('+mesPasadoLabel+')':''} se vendieron <strong style="color:${C.ventas}">${realPas} unidad${realPas!==1?'es':''}</strong>, la meta era de <strong style="color:#A78BFA">${metaPas} unidad${metaPas!==1?'es':''}</strong>${p!=null?', cerrando <strong style="color:'+_colLec(realPas,metaPas)+'">'+p+'% '+_dirLec(realPas,metaPas)+' de la meta</strong>':''}.`;
+    }
+    if(!interpMensual) interpMensual = 'Sin datos suficientes para la interpretación.';
+  }
+
+  // ── Interpretación: Unidades Acumuladas Comercial vs Real ─
+  let interpComAcum = '';
+  {
+    const acRealH = idxActual>=0 && acVRealUArr[idxActual]!=null ? acVRealUArr[idxActual] : null;
+    const acMetaH = idxActual>=0 ? acMCUArr[idxActual] : null;
+    const acRealP = idxPasado>=0 && acVRealUArr[idxPasado]!=null ? acVRealUArr[idxPasado] : null;
+    const acMetaP = idxPasado>=0 ? acMCUArr[idxPasado] : null;
+    if(acRealH!=null && acMetaH!=null) {
+      const p = _pctLec(acRealH, acMetaH);
+      interpComAcum += `A día de hoy se tienen <strong style="color:${C.verde}">${acRealH} unidades</strong> vendidas acumuladas, la proyección comercial acumulada para ${mesActualLabel||'este mes'} es de <strong style="color:#A78BFA">${acMetaH} unidades</strong>, por lo que se encuentra <strong style="color:${_colLec(acRealH,acMetaH)}">${p!=null?p+'%':'—'} ${_dirLec(acRealH,acMetaH)} de la meta</strong>.`;
+    }
+    if(acRealP!=null && acMetaP!=null) {
+      const p = _pctLec(acRealP, acMetaP);
+      interpComAcum += ` El mes pasado${mesPasadoLabel?' ('+mesPasadoLabel+')':''} se tenían <strong style="color:${C.verde}">${acRealP} ventas</strong> acumuladas y la proyección era de <strong style="color:#A78BFA">${acMetaP} unidades</strong>, cerrando el mes <strong style="color:${_colLec(acRealP,acMetaP)}">${p!=null?p+'%':'—'} ${_dirLec(acRealP,acMetaP)} de la meta</strong>.`;
+    }
+    if(!interpComAcum) interpComAcum = 'Sin datos suficientes para la interpretación.';
+  }
+
   // ── KPIs resumen ──────────────────────────────────────────
   const totalVR = Object.values(ventasRealesS).reduce((a,b)=>a+b,0);
   const totalVP = Object.values(ventasProyS).reduce((a,b)=>a+b,0);
@@ -741,49 +817,37 @@ function renderGraficos(){
       <div class="kpi"><div class="kpi-l">Ingresos Proyectados S/</div><div class="kpi-v">${fmt(totalIP)}</div></div>
     </div>
 
-    <!-- Gráfico 1: Ventas Reales vs Ingresos Reales -->
-    <div class="sec-label">Ventas Reales vs Ingresos Reales (S/)</div>
-    <div class="chart-card">
-      <div class="legend">
-        <span class="legend-item"><span class="legend-dot" style="background:${C.ventas}"></span>Ventas Reales</span>
-        <span class="legend-item"><span class="legend-dot" style="background:${C.ingresos}"></span>Ingresos Reales</span>
-      </div>
-      <div class="ch" style="height:220px"><canvas id="ch-vr-ingr"></canvas></div>
-    </div>
+    <!-- Avance Comercial vs Meta — vista principal para inversionistas -->
+    <div class="sec-label">Avance Comercial vs Meta</div>
 
-    <!-- Gráfico 2: Proyección Acumulada Mixta -->
-    <div class="sec-label" style="margin-top:16px">Proyección Acumulada de Ventas e Ingresos (S/) — pasado: real · actual: real+proy · futuro: proyectado</div>
+    <!-- Ventas mensuales vs meta -->
     <div class="chart-card">
-      <div class="legend">
-        <span class="legend-item"><span class="legend-dot" style="background:${C.proyVentas}"></span>Ventas Acum.</span>
-        <span class="legend-item"><span class="legend-dot" style="background:${C.proyIngr}"></span>Ingresos Acum.</span>
-      </div>
-      <div class="ch" style="height:220px"><canvas id="ch-proy-ingr"></canvas></div>
-    </div>
-
-    <!-- Gráfico nuevo: Meta Comercial vs Real MENSUAL (barras) -->
-    <div class="sec-label" style="margin-top:16px">Proyeccion Comercial vs Real — Ventas Mensuales</div>
-    <div class="chart-card">
+      <div class="chart-title">Proyección Comercial vs Real — Ventas Mensuales</div>
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:#A78BFA;border-radius:2px"></span>Meta Mensual</span>
         <span class="legend-item"><span class="legend-dot" style="background:${C.ventas};border-radius:2px"></span>Real Mensual</span>
       </div>
       <div class="ch" style="height:220px"><canvas id="ch-comercial-meta-mensual"></canvas></div>
+      <p style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:0">${interpMensual}</p>
     </div>
 
-    <!-- Gráfico nuevo: Meta Comercial vs Real (Unidades acumuladas) -->
-    <div class="sec-label" style="margin-top:16px">Proyeccion Comercial vs Real — Unidades Acumuladas</div>
-    <div class="chart-card">
+    <!-- Unidades acumuladas vs meta comercial -->
+    <div class="chart-card" style="margin-top:8px">
+      <div class="chart-title">Proyección Comercial vs Real — Unidades Acumuladas</div>
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:#A78BFA"></span>Meta Comercial Acum.</span>
         <span class="legend-item"><span class="legend-dot" style="background:${C.verde}"></span>Real Acum.</span>
       </div>
       <div class="ch" style="height:220px"><canvas id="ch-comercial-meta"></canvas></div>
+      <p style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:0">${interpComAcum}</p>
     </div>
 
-    <!-- Gráfico 3: Acumulado Unidades Vendidas Proy vs Real -->
-    <div class="sec-label" style="margin-top:16px">Ventas Acumuladas: Meta vs Real (Unidades)</div>
+    <!-- Avance vs Proyección Original -->
+    <div class="sec-label" style="margin-top:20px">Avance vs Proyección Original</div>
+
+    <!-- Unidades acumuladas vs proyección original -->
     <div class="chart-card">
+      <div class="chart-title">Ventas Acumuladas: Meta vs Real (Unidades)</div>
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:${C.acumMeta}"></span>Meta Acum.</span>
         <span class="legend-item"><span class="legend-dot" style="background:${C.acumReal}"></span>Real Acum.</span>
@@ -792,15 +856,39 @@ function renderGraficos(){
       <p style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:0">${interp3}</p>
     </div>
 
-    <!-- Gráfico 4: Acumulado Ingresos Proy vs Real -->
-    <div class="sec-label" style="margin-top:16px">Ingresos Acumulados: Meta vs Real (S/)</div>
-    <div class="chart-card">
+    <!-- Ingresos acumulados vs proyección original -->
+    <div class="chart-card" style="margin-top:8px">
+      <div class="chart-title">Ingresos Acumulados: Meta vs Real (S/)</div>
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:${C.acumMeta}"></span>Ingresos Meta Acum.</span>
         <span class="legend-item"><span class="legend-dot" style="background:${C.acumReal}"></span>Ingresos Real Acum.</span>
       </div>
       <div class="ch" style="height:220px"><canvas id="ch-acum-s"></canvas></div>
       <p style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:0">${interp4}</p>
+    </div>
+
+    <!-- Detalle Histórico -->
+    <div class="sec-label" style="margin-top:20px">Detalle Histórico</div>
+
+    <!-- Ventas reales vs ingresos reales -->
+    <div class="chart-card">
+      <div class="chart-title">Ventas Reales vs Ingresos Reales (S/)</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:${C.ventas}"></span>Ventas Reales</span>
+        <span class="legend-item"><span class="legend-dot" style="background:${C.ingresos}"></span>Ingresos Reales</span>
+      </div>
+      <div class="ch" style="height:220px"><canvas id="ch-vr-ingr"></canvas></div>
+    </div>
+
+    <!-- Proyección de flujo acumulado -->
+    <div class="chart-card" style="margin-top:8px">
+      <div class="chart-title">Proyección de Flujo Acumulado (S/)</div>
+      <div class="chart-sub">Meses pasados: real · Mes actual: real + proyectado · Meses futuros: proyectado</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:${C.proyVentas}"></span>Ventas Acum.</span>
+        <span class="legend-item"><span class="legend-dot" style="background:${C.proyIngr}"></span>Ingresos Acum.</span>
+      </div>
+      <div class="ch" style="height:220px"><canvas id="ch-proy-ingr"></canvas></div>
     </div>
   `;
 
@@ -921,57 +1009,6 @@ function renderGraficos(){
       }
     });
   }
-
-  // ── Meta Comercial (rawCMeta) — acumulado de unidades por mes ──
-  const metaComercialU = {};
-  if(rawCMeta.length > 0) {
-    const colsFecha = Object.keys(rawCMeta[0])[0];
-    const colsProyecto = Object.keys(rawCMeta[0]).slice(1);
-
-    rawCMeta.forEach(r => {
-      let k = null;
-      const v = r[colsFecha];
-
-      // Caso 1: string tipo "Date(2026,3,1)" que devuelve gviz
-      if(typeof v === 'string' && v.startsWith('Date(')) {
-        const p = v.substring(5, v.length-1).split(',');
-        k = `${p[0]}-${String(parseInt(p[1])+1).padStart(2,'0')}`;
-      }
-      // Caso 2: string legible "abr-26"
-      else if(typeof v === 'string' && v.trim()) {
-        const meses = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
-        const parts = v.trim().toLowerCase().split('-');
-        const mesNum = meses[parts[0]];
-        let anio = parseInt(parts[1]);
-        if(mesNum && !isNaN(anio)) {
-          if(anio < 100) anio += 2000;
-          k = `${anio}-${String(mesNum).padStart(2,'0')}`;
-        }
-      }
-      // Caso 3: número (días desde 30-dic-1899, formato interno de Sheets)
-      else if(typeof v === 'number') {
-        const d = new Date((v - 25569) * 86400 * 1000);
-        k = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;
-      }
-
-      if(!k) return;
-
-      let total = 0;
-      colsProyecto.forEach(col => {
-        if(fp && col.trim() !== fp) return;
-        total += num(r[col]);
-      });
-      metaComercialU[k] = (metaComercialU[k] || 0) + total;
-    });
-  }
-
-  // Acumulado Meta Comercial
-  let acMCU = 0;
-  const acMCUArr = [];
-  activeKeys.forEach(k => {
-    acMCU += metaComercialU[k] || 0;
-    acMCUArr.push(acMCU);
-  });
 
   // Chart Meta Comercial vs Real — MENSUAL (barras)
   // Real mensual: cortar meses futuros al mes actual
