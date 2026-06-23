@@ -484,6 +484,27 @@ function renderGraficos(){
         }
       });
     });
+    // Incluir fechas de rawCMeta (proyectos nuevos sin ventas aún tienen meta comercial)
+    if(rawCMeta.length > 0) {
+      const _fc = Object.keys(rawCMeta[0])[0];
+      const _bm = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
+      rawCMeta.forEach(r => {
+        const v = r[_fc];
+        let m = null, y = null;
+        if(typeof v === 'string' && v.startsWith('Date(')) {
+          const p = v.substring(5, v.length-1).split(',');
+          y = parseInt(p[0]); m = parseInt(p[1])+1;
+        } else if(typeof v === 'string' && v.trim()) {
+          const pts = v.trim().toLowerCase().split('-');
+          m = _bm[pts[0]]; y = parseInt(pts[1]);
+          if(y && y < 100) y += 2000;
+        } else if(typeof v === 'number' && v > 0) {
+          const d = new Date((v - 25569) * 86400 * 1000);
+          y = d.getUTCFullYear(); m = d.getUTCMonth()+1;
+        }
+        if(m>=1&&m<=12&&y>2000) all.push(`${y}-${String(m).padStart(2,'0')}`);
+      });
+    }
     if(!all.length) return [];
     all.sort();
     const minKey = all[0];
@@ -579,10 +600,44 @@ function renderGraficos(){
     }
   });
 
-  // ── Filtrar keys con algún dato ───────────────────────────
+  // ── Meta Comercial — calculada antes de activeKeys para incluir sus meses ──
+  const metaComercialU = {};
+  if(rawCMeta.length > 0) {
+    const _cFechaCol = Object.keys(rawCMeta[0])[0];
+    const _cProjCols = Object.keys(rawCMeta[0]).slice(1);
+    const _cMeses = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
+    rawCMeta.forEach(r => {
+      let k = null;
+      const v = r[_cFechaCol];
+      if(typeof v === 'string' && v.startsWith('Date(')) {
+        const p = v.substring(5, v.length-1).split(',');
+        k = `${p[0]}-${String(parseInt(p[1])+1).padStart(2,'0')}`;
+      } else if(typeof v === 'string' && v.trim()) {
+        const parts = v.trim().toLowerCase().split('-');
+        const mesNum = _cMeses[parts[0]];
+        let anio = parseInt(parts[1]);
+        if(mesNum && !isNaN(anio)) {
+          if(anio < 100) anio += 2000;
+          k = `${anio}-${String(mesNum).padStart(2,'0')}`;
+        }
+      } else if(typeof v === 'number') {
+        const d = new Date((v - 25569) * 86400 * 1000);
+        k = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;
+      }
+      if(!k) return;
+      let total = 0;
+      _cProjCols.forEach(col => {
+        if(fp && col.trim() !== fp) return;
+        total += num(r[col]);
+      });
+      metaComercialU[k] = (metaComercialU[k] || 0) + total;
+    });
+  }
+
+  // ── Filtrar keys con algún dato (incluye meses de meta comercial) ──
   const activeKeys = mesKeys.filter(k =>
     ventasRealesU[k]||ventasRealesS[k]||ingresosRealesS[k]||
-    ventasProyU[k]||ventasProyS[k]||ingresosProyS[k]
+    ventasProyU[k]||ventasProyS[k]||ingresosProyS[k]||metaComercialU[k]
   );
   const activeLabels = activeKeys.map(k => {
     const [y,m] = k.split('-');
@@ -717,39 +772,7 @@ function renderGraficos(){
   }
   if(!interp4) interp4 = 'Sin datos suficientes para la interpretación.';
 
-  // ── Meta Comercial (rawCMeta) — acumulado de unidades por mes ──
-  const metaComercialU = {};
-  if(rawCMeta.length > 0) {
-    const colsFecha = Object.keys(rawCMeta[0])[0];
-    const colsProyecto = Object.keys(rawCMeta[0]).slice(1);
-    rawCMeta.forEach(r => {
-      let k = null;
-      const v = r[colsFecha];
-      if(typeof v === 'string' && v.startsWith('Date(')) {
-        const p = v.substring(5, v.length-1).split(',');
-        k = `${p[0]}-${String(parseInt(p[1])+1).padStart(2,'0')}`;
-      } else if(typeof v === 'string' && v.trim()) {
-        const meses = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
-        const parts = v.trim().toLowerCase().split('-');
-        const mesNum = meses[parts[0]];
-        let anio = parseInt(parts[1]);
-        if(mesNum && !isNaN(anio)) {
-          if(anio < 100) anio += 2000;
-          k = `${anio}-${String(mesNum).padStart(2,'0')}`;
-        }
-      } else if(typeof v === 'number') {
-        const d = new Date((v - 25569) * 86400 * 1000);
-        k = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;
-      }
-      if(!k) return;
-      let total = 0;
-      colsProyecto.forEach(col => {
-        if(fp && col.trim() !== fp) return;
-        total += num(r[col]);
-      });
-      metaComercialU[k] = (metaComercialU[k] || 0) + total;
-    });
-  }
+  // acMCUArr: acumulado de meta comercial usando activeKeys ya expandido
   let acMCU = 0;
   const acMCUArr = [];
   activeKeys.forEach(k => {
