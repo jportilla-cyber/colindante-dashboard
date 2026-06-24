@@ -1405,6 +1405,7 @@ function buildCuotasMensualesData() {
       proyecto: str(r['PROYECTO']),
       dpto: str(r['DPTO']),
       tipo: str(r['Tipo de Credito']),
+      concepto: str(r['Concepto']) || str(r['concepto']),
       monto,
       situacion,
       estadoVenta,
@@ -1593,6 +1594,7 @@ function abrirModalCuotaMes(key, label) {
             <tr>
               <th>Cliente</th>
               <th>Proyecto · Dpto</th>
+              <th>Concepto</th>
               <th style="text-align:right">Monto</th>
               <th>Vencimiento original</th>
               <th>Fecha esperada cobro</th>
@@ -1611,6 +1613,7 @@ function abrirModalCuotaMes(key, label) {
       <tr>
         <td style="font-weight:600;color:var(--text);white-space:nowrap">${c.nombre}</td>
         <td style="color:var(--text3);font-size:11px;white-space:nowrap">${c.proyecto}${c.dpto ? ' · Dpto ' + c.dpto : ''}${c.tipo ? '<br><span style="opacity:.7">' + c.tipo + '</span>' : ''}</td>
+        <td style="font-size:11px;color:var(--text2);white-space:nowrap">${c.concepto || '—'}</td>
         <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--text);white-space:nowrap">${fmt(c.monto)}</td>
         <td style="font-family:var(--font-mono);font-size:11px;color:var(--text3);white-space:nowrap">${origStr}</td>
         <td style="font-family:var(--font-mono);font-size:11px;white-space:nowrap;${ajustado ? 'color:var(--gold);font-weight:600' : 'color:var(--text3)'}">${espStr}${ajustado ? ' <span style="font-size:9px;opacity:.7">(ajust.)</span>' : ''}</td>
@@ -1733,6 +1736,7 @@ function renderCronograma(){
       const dpto     = str(r['DPTO']);
       const torre    = str(r['TORRE']);
       const tipo     = str(r['Tipo de Credito']);
+      const concepto = str(r['Concepto']) || str(r['concepto']);
       const monto    = num(r['Monto Cuota']);
       const fechaStr = str(r['Fecha Cuota']);
       const fecha    = parseFechaCron(fechaStr);
@@ -1757,6 +1761,7 @@ function renderCronograma(){
           <div class="cron-cliente">${nombreCorto}</div>
           <div class="cron-meta">
             ${proy}${dpto?' · Dpto '+dpto:''}${torre?' T'+torre:''}
+            ${concepto ? '<br><span style="color:var(--gold);font-weight:500">'+concepto+'</span>' : ''}
             ${tipo ? '<br>'+tipo : ''}
             <br>${fechaFmt}
           </div>
