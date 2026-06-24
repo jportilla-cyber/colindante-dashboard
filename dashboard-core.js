@@ -1193,13 +1193,16 @@ function renderCobranzaNueva(){
   const pctCobrado = totalValor > 0 ? Math.round((totalCobrado / totalValor) * 1000) / 10 : 0;
   const pctPendiente = 100 - pctCobrado;
 
+  // Gráfico mensual — preparar antes de construir html
+  const _cuotasGrafDataCob = renderGraficoCuotasMensuales('ch-cuotas-cob');
+
   let html = `
     <div class="sec-label">Resumen de cobranza</div>
     <div class="kpi-grid">
       <div class="kpi"><div class="kpi-l">Total cobrado</div><div class="kpi-v ok money">${fmt(totalCobrado)}</div></div>
       <div class="kpi"><div class="kpi-l">Total por cobrar</div><div class="kpi-v warn money">${fmt(totalPorCobrar)}</div></div>
     </div>
-    
+
     <div class="prog-wrap" style="margin-top:9px">
       <div class="prog-row">
         <span class="prog-label">Progreso de cobranza</span>
@@ -1207,6 +1210,8 @@ function renderCobranzaNueva(){
       </div>
       <div class="prog-bg"><div class="prog-fill" style="width:${Math.max(pctCobrado,1)}%; background: linear-gradient(90deg, #3B6D11 0%, #1D9E75 100%);"></div></div>
     </div>
+
+    ${_cuotasGrafDataCob ? _cuotasGrafDataCob.html : ''}
 
     <div class="sec-label" style="margin-top:14px">Tipo de crédito</div>
   `;
@@ -1344,6 +1349,285 @@ function renderCobranzaNueva(){
   }
 
   document.getElementById('cobranza-content').innerHTML = html;
+  initGraficoCuotas('ch-cuotas-cob', _cuotasGrafDataCob);
+}
+
+// ════════════════════════════════════════════════════════════
+// GRÁFICO MENSUAL DE CUOTAS — compartido entre Cuotas y Cobranza
+// Reglas de ajuste: VENDIDO +3 días · SEPARADO +14 días
+// ════════════════════════════════════════════════════════════
+let _cuotasMensualesData = null;
+
+function buildCuotasMensualesData() {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const fp = document.getElementById('fil-proyecto').value;
+  const fs = document.getElementById('fil-situacion').value;
+
+  const meses = {};
+
+  rawCron.forEach(r => {
+    if (str(r['INMUEBLE']) !== 'Departamento') return;
+    if (fp && str(r['PROYECTO']) !== fp) return;
+    if (fs && str(r['ESTADO VENTA']) !== fs) return;
+    if (str(r['ESTADO']) !== 'Por Pagar') return;
+
+    const estadoVenta = str(r['ESTADO VENTA']);
+    const fechaOriginal = parseFechaExcel(r['Fecha Cuota']);
+    if (!fechaOriginal) return;
+
+    const fechaEsperada = new Date(fechaOriginal.getTime());
+    if (estadoVenta === 'SEPARADO') {
+      fechaEsperada.setDate(fechaEsperada.getDate() + 14);
+    } else if (estadoVenta === 'VENDIDO') {
+      fechaEsperada.setDate(fechaEsperada.getDate() + 3);
+    }
+
+    const mKey = `${fechaEsperada.getFullYear()}-${String(fechaEsperada.getMonth() + 1).padStart(2, '0')}`;
+    const monto = num(r['Monto Cuota']);
+    if (monto <= 0) return;
+
+    const diffDias = Math.round((fechaOriginal - hoy) / (1000 * 60 * 60 * 24));
+    let situacion = 'Pendiente';
+    if (diffDias < 0) situacion = 'Vencida';
+    else if (diffDias <= 7) situacion = 'Por Vencer';
+
+    if (!meses[mKey]) {
+      meses[mKey] = { vencidas: 0, porVencer: 0, pendientes: 0, total: 0, clientes: [] };
+    }
+    meses[mKey].total += monto;
+    if (situacion === 'Vencida') meses[mKey].vencidas += monto;
+    else if (situacion === 'Por Vencer') meses[mKey].porVencer += monto;
+    else meses[mKey].pendientes += monto;
+
+    meses[mKey].clientes.push({
+      nombre: str(r['Nombre del Cliente']) || 'Sin nombre',
+      proyecto: str(r['PROYECTO']),
+      dpto: str(r['DPTO']),
+      tipo: str(r['Tipo de Credito']),
+      monto,
+      situacion,
+      estadoVenta,
+      fechaOriginal,
+      fechaEsperada
+    });
+  });
+
+  return meses;
+}
+
+function renderGraficoCuotasMensuales(chartId) {
+  const data = buildCuotasMensualesData();
+  _cuotasMensualesData = data;
+
+  const keys = Object.keys(data).sort();
+  if (!keys.length) return null;
+
+  const isLight = document.body.classList.contains('light');
+  const labels = keys.map(k => {
+    const [y, m] = k.split('-');
+    return MESES[parseInt(m) - 1] + '-' + String(y).slice(-2);
+  });
+
+  const mesActual = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const mesActualIdx = keys.indexOf(mesActual);
+  const totalEsperado = keys.reduce((a, k) => a + data[k].total, 0);
+  const totalEsteMes = mesActual && data[mesActual] ? data[mesActual].total : 0;
+
+  const html = `
+    <div class="sec-label">Flujo Mensual de Cuotas Esperadas</div>
+    <div class="chart-card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+        <div>
+          <div class="chart-title">Cuotas por cobrar · mes a mes</div>
+          <div class="chart-sub">Fechas ajustadas: Vendido +3 días · Separado +2 semanas · Haz clic en una barra para ver clientes</div>
+        </div>
+        <div style="display:flex;gap:16px;flex-shrink:0">
+          <div style="text-align:right">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em">Total esperado</div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--text)">${fmt(totalEsperado)}</div>
+          </div>
+          ${totalEsteMes > 0 ? `<div style="text-align:right">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em">Este mes</div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--gold)">${fmt(totalEsteMes)}</div>
+          </div>` : ''}
+        </div>
+      </div>
+      <div class="legend" style="margin-bottom:10px">
+        <span class="legend-item"><span class="legend-dot" style="background:#F87171;border-radius:2px"></span>Vencidas</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#FBBF24;border-radius:2px"></span>Por vencer</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#88BAE0;border-radius:2px"></span>Pendientes</span>
+      </div>
+      <div class="ch" style="height:260px"><canvas id="${chartId}" style="cursor:pointer"></canvas></div>
+    </div>
+  `;
+
+  return { html, keys, labels, data, isLight, mesActualIdx };
+}
+
+function initGraficoCuotas(chartId, chartData) {
+  if (!chartData) return;
+  const { keys, labels, data, isLight, mesActualIdx } = chartData;
+
+  if (chartsCreados[chartId]) { chartsCreados[chartId].destroy(); delete chartsCreados[chartId]; }
+
+  const canvas = document.getElementById(chartId);
+  if (!canvas) return;
+
+  const isLightNow = document.body.classList.contains('light');
+  const C = {
+    grid: isLightNow ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,.06)',
+    tick: isLightNow ? '#9CA3AF' : '#606880',
+    rojo:  isLightNow ? '#B91C1C' : '#F87171',
+    amber: isLightNow ? '#B45309' : '#FBBF24',
+    azul:  isLightNow ? '#1E4A99' : '#88BAE0'
+  };
+
+  chartsCreados[chartId] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Vencidas',
+          data: keys.map(k => Math.round(data[k].vencidas)),
+          backgroundColor: C.rojo + 'BB',
+          borderColor: C.rojo,
+          borderWidth: 1,
+          stack: 'cuotas'
+        },
+        {
+          label: 'Por vencer',
+          data: keys.map(k => Math.round(data[k].porVencer)),
+          backgroundColor: C.amber + 'BB',
+          borderColor: C.amber,
+          borderWidth: 1,
+          stack: 'cuotas'
+        },
+        {
+          label: 'Pendientes',
+          data: keys.map(k => Math.round(data[k].pendientes)),
+          backgroundColor: C.azul + 'BB',
+          borderColor: C.azul,
+          borderWidth: 1,
+          stack: 'cuotas'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: (evt, elements) => {
+        if (elements.length > 0) {
+          const idx = elements[0].index;
+          abrirModalCuotaMes(keys[idx], labels[idx]);
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: isLightNow ? 'rgba(255,255,255,0.97)' : 'rgba(12,14,20,0.92)',
+          borderColor:     isLightNow ? 'rgba(138,106,31,0.3)' : 'rgba(201,168,76,0.3)',
+          borderWidth: 1,
+          titleColor: isLightNow ? '#8A6A1F' : '#C9A84C',
+          bodyColor:  isLightNow ? '#374151' : '#A0A8C0',
+          padding: 10,
+          callbacks: {
+            label: c => {
+              if (!c.parsed.y) return null;
+              return ` ${c.dataset.label}: S/ ${Math.round(c.parsed.y).toLocaleString('es-PE')}`;
+            },
+            footer: items => {
+              const k = keys[items[0].dataIndex];
+              const d = data[k];
+              const n = d.clientes.length;
+              return `Total: S/ ${Math.round(d.total).toLocaleString('es-PE')} · ${n} cuota${n !== 1 ? 's' : ''} — clic para ver clientes`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { color: C.tick, font: { size: 10 }, autoSkip: true, maxRotation: 45 }
+        },
+        y: {
+          stacked: true,
+          grid: { color: C.grid },
+          ticks: {
+            color: C.tick, font: { size: 10 },
+            callback: v => v >= 1e6 ? 'S/' + (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? 'S/' + (v / 1e3).toFixed(0) + 'k' : 'S/' + v
+          }
+        }
+      }
+    }
+  });
+}
+
+function abrirModalCuotaMes(key, label) {
+  if (!_cuotasMensualesData || !_cuotasMensualesData[key]) return;
+  const mes = _cuotasMensualesData[key];
+  document.getElementById('modal-cuotas-title').textContent = `Cuotas esperadas · ${label}`;
+
+  const orden = { 'Vencida': 0, 'Por Vencer': 1, 'Pendiente': 2 };
+  const clientes = [...mes.clientes].sort((a, b) => {
+    if (orden[a.situacion] !== orden[b.situacion]) return orden[a.situacion] - orden[b.situacion];
+    return b.monto - a.monto;
+  });
+
+  const fmtFecha = d => d ? d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+  let bodyHtml = `
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="ck" style="flex:1;min-width:130px"><div class="ck-l">Total mes</div><div class="ck-v" style="color:var(--text)">${fmt(mes.total)}</div></div>
+      ${mes.vencidas > 0 ? `<div class="ck" style="flex:1;min-width:130px"><div class="ck-l">Vencidas</div><div class="ck-v" style="color:var(--rojo)">${fmt(mes.vencidas)}</div></div>` : ''}
+      ${mes.porVencer > 0 ? `<div class="ck" style="flex:1;min-width:130px"><div class="ck-l">Por vencer</div><div class="ck-v" style="color:var(--amber)">${fmt(mes.porVencer)}</div></div>` : ''}
+      ${mes.pendientes > 0 ? `<div class="ck" style="flex:1;min-width:130px"><div class="ck-l">Pendientes</div><div class="ck-v" style="color:var(--accent)">${fmt(mes.pendientes)}</div></div>` : ''}
+      <div class="ck" style="flex:1;min-width:130px"><div class="ck-l">Cuotas</div><div class="ck-v">${clientes.length}</div></div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Proyecto · Dpto</th>
+              <th style="text-align:right">Monto</th>
+              <th>Vencimiento original</th>
+              <th>Fecha esperada cobro</th>
+              <th>Estado venta</th>
+              <th>Estado cuota</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+  const colMap = { 'Vencida': 'var(--rojo)', 'Por Vencer': 'var(--amber)', 'Pendiente': 'var(--accent)' };
+  clientes.forEach(c => {
+    const origStr = fmtFecha(c.fechaOriginal);
+    const espStr  = fmtFecha(c.fechaEsperada);
+    const ajustado = origStr !== espStr;
+    bodyHtml += `
+      <tr>
+        <td style="font-weight:600;color:var(--text);white-space:nowrap">${c.nombre}</td>
+        <td style="color:var(--text3);font-size:11px;white-space:nowrap">${c.proyecto}${c.dpto ? ' · Dpto ' + c.dpto : ''}${c.tipo ? '<br><span style="opacity:.7">' + c.tipo + '</span>' : ''}</td>
+        <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--text);white-space:nowrap">${fmt(c.monto)}</td>
+        <td style="font-family:var(--font-mono);font-size:11px;color:var(--text3);white-space:nowrap">${origStr}</td>
+        <td style="font-family:var(--font-mono);font-size:11px;white-space:nowrap;${ajustado ? 'color:var(--gold);font-weight:600' : 'color:var(--text3)'}">${espStr}${ajustado ? ' <span style="font-size:9px;opacity:.7">(ajust.)</span>' : ''}</td>
+        <td style="font-size:11px;white-space:nowrap">${c.estadoVenta}</td>
+        <td style="font-weight:600;color:${colMap[c.situacion] || 'var(--text2)'};white-space:nowrap">${c.situacion}</td>
+      </tr>`;
+  });
+
+  bodyHtml += `</tbody></table></div></div>`;
+  document.getElementById('modal-cuotas-body').innerHTML = bodyHtml;
+  document.getElementById('modal-cuotas').classList.add('visible');
+}
+
+function cerrarModalCuotas(event) {
+  if (!event || event.target.id === 'modal-cuotas' || event.target.classList.contains('modal-close')) {
+    document.getElementById('modal-cuotas').classList.remove('visible');
+  }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1389,6 +1673,9 @@ function renderCronograma(){
     { key:'Pendiente',  label:'Pendientes',      cls:'pendiente',  icono:'A tiempo' },
   ];
 
+  // Gráfico mensual — preparar antes de construir html
+  const _cuotasGrafData = renderGraficoCuotasMensuales('ch-cuotas-cron');
+
   let html = `
     <div class="kpi-grid" style="margin-top:4px">
       <div class="kpi"><div class="kpi-l">Total ingresos</div><div class="kpi-v ok money">${fmt(totalIngr)}</div></div>
@@ -1407,9 +1694,12 @@ function renderCronograma(){
       </div>
     </div>`;
 
+  if (_cuotasGrafData) html += _cuotasGrafData.html;
+
   if(cuotasConFiltroSituacion.length === 0){
     html += `<div class="empty">Sin datos de cronograma.<br>Asegúrate de haber exportado la hoja "Proy. Ingresos" desde el VBA.</div>`;
     document.getElementById('cronograma-content').innerHTML = html;
+    initGraficoCuotas('ch-cuotas-cron', _cuotasGrafData);
     return;
   }
 
@@ -1482,6 +1772,7 @@ function renderCronograma(){
   });
 
   document.getElementById('cronograma-content').innerHTML = html;
+  initGraficoCuotas('ch-cuotas-cron', _cuotasGrafData);
 }
 
 function parseFechaCron(s){
