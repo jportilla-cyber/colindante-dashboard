@@ -48,6 +48,7 @@ let rawMC = [], rawAB = [], rawCron = [], rawProy = [], rawMeta = [], rawCMeta =
 let filCuota = '';
 let filTipoCredito = '';
 let chartsCreados = {};
+let _caidasData = null;
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
 
 // ── Utilidades ───────────────────────────────────────────────
@@ -442,6 +443,110 @@ function renderProyectos(){
 }
 
 // ════════════════════════════════════════════════════════════
+// CAÍDAS / DESISTIMIENTOS — datos y modal
+// ════════════════════════════════════════════════════════════
+function buildCaidasMensualesData() {
+  const fp = document.getElementById('fil-proyecto').value;
+  const uniqueMap = {};
+
+  rawAB.forEach(r => {
+    const proyecto = str(r['PROYECTO']);
+    if (fp && proyecto !== fp) return;
+
+    const detalle = str(r['DETALLE']).toLowerCase();
+    if (!detalle.includes('desestimiento')) return;
+
+    const cliente = str(r['Nombre del Cliente']) || str(r['CLIENTE']);
+
+    let unitStr = '', unitType = '';
+    if (str(r['DPTO']) !== '') { unitStr = str(r['DPTO']); unitType = 'Dpto'; }
+    else if (str(r['EST']) !== '') { unitStr = str(r['EST']); unitType = 'Est'; }
+    else if (str(r['DEP']) !== '') { unitStr = str(r['DEP']); unitType = 'Dep'; }
+    if (!unitStr) return;
+
+    const key = `${proyecto}|${cliente}|${unitType}-${unitStr}`;
+    if (uniqueMap[key]) return; // ya registrado
+
+    const rawFecha = r['FECHA DE CAIDA'] || r['FECHA  DE CAIDA'] || r['Fecha de Caida'] ||
+                     r['FECHA_DE_CAIDA'] || r['Fecha De Caida'];
+    let fecha = rawFecha ? parseFechaExcel(rawFecha) : null;
+
+    // Fallback a columnas Mes / Año si no hay fecha de caída
+    if (!fecha) {
+      const m = num(r['Mes']), y = num(r['Año']);
+      if (m >= 1 && m <= 12 && y > 2000) fecha = new Date(y, m - 1, 1);
+    }
+
+    uniqueMap[key] = { proyecto, cliente, unidad: `${unitType} ${unitStr}`, fecha, tieneFechaCaida: !!rawFecha };
+  });
+
+  const meses = {};
+  let sinFecha = 0;
+
+  Object.values(uniqueMap).forEach(d => {
+    if (!d.fecha) { sinFecha++; return; }
+    const mKey = `${d.fecha.getFullYear()}-${String(d.fecha.getMonth() + 1).padStart(2, '0')}`;
+    if (!meses[mKey]) meses[mKey] = { count: 0, items: [] };
+    meses[mKey].count++;
+    meses[mKey].items.push(d);
+  });
+
+  return { meses, sinFecha, total: Object.values(uniqueMap).length };
+}
+
+function abrirModalCaidas(key, label) {
+  if (!_caidasData || !_caidasData.meses[key]) return;
+  const mes = _caidasData.meses[key];
+  document.getElementById('modal-caidas-title').textContent = `Desistimientos · ${label}`;
+
+  const items = [...mes.items].sort((a, b) => a.proyecto.localeCompare(b.proyecto));
+
+  let bodyHtml = `
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="ck" style="flex:1;min-width:130px">
+        <div class="ck-l">Caídas en este mes</div>
+        <div class="ck-v" style="color:var(--rojo);font-size:24px">${mes.count}</div>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Proyecto</th>
+              <th>Cliente</th>
+              <th>Unidad</th>
+              <th>Fecha de caída</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+  items.forEach(d => {
+    const fStr = d.fecha
+      ? d.fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+      : '—';
+    const fColor = d.tieneFechaCaida ? 'var(--rojo)' : 'var(--text3)';
+    bodyHtml += `
+      <tr>
+        <td style="font-weight:600;color:var(--text)">${d.proyecto}</td>
+        <td>${d.cliente}</td>
+        <td style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">${d.unidad}</td>
+        <td style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:${fColor}">${fStr}${!d.tieneFechaCaida ? ' <span style="opacity:.6;font-weight:400">(estimada)</span>' : ''}</td>
+      </tr>`;
+  });
+
+  bodyHtml += `</tbody></table></div></div>`;
+  document.getElementById('modal-caidas-body').innerHTML = bodyHtml;
+  document.getElementById('modal-caidas').classList.add('visible');
+}
+
+function cerrarModalCaidas(event) {
+  if (!event || event.target.id === 'modal-caidas' || event.target.classList.contains('modal-close')) {
+    document.getElementById('modal-caidas').classList.remove('visible');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
 // PÁGINA 3: GRÁFICOS
 // ════════════════════════════════════════════════════════════
 function renderGraficos(){
@@ -825,7 +930,7 @@ function renderGraficos(){
   const totalUVP = Object.values(ventasProyU).reduce((a,b)=>a+b,0);
 
   // ── Destruir charts previos ───────────────────────────────
-  ['ch-vr-ingr','ch-proy-ingr','ch-comercial-meta-mensual','ch-comercial-meta','ch-acum-unid','ch-acum-s'].forEach(id=>{
+  ['ch-vr-ingr','ch-proy-ingr','ch-comercial-meta-mensual','ch-comercial-meta','ch-acum-unid','ch-acum-s','ch-caidas'].forEach(id=>{
     if(chartsCreados[id]){chartsCreados[id].destroy();delete chartsCreados[id];}
   });
 
@@ -912,6 +1017,24 @@ function renderGraficos(){
         <span class="legend-item"><span class="legend-dot" style="background:${C.proyIngr}"></span>Ingresos Acum.</span>
       </div>
       <div class="ch" style="height:220px"><canvas id="ch-proy-ingr"></canvas></div>
+    </div>
+
+    <!-- Seguimiento de Caídas / Desistimientos -->
+    <div class="sec-label" style="margin-top:24px">Seguimiento de Caídas</div>
+    <div id="caidas-kpis" class="kpi-grid" style="margin-bottom:10px"></div>
+    <div class="chart-card" id="caidas-chart-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+        <div>
+          <div class="chart-title">Desistimientos por Mes</div>
+          <div class="chart-sub">Basado en Fecha de Caída registrada · Haz clic en una barra para ver el detalle</div>
+        </div>
+      </div>
+      <div class="legend" style="margin-bottom:10px">
+        <span class="legend-item"><span class="legend-dot" style="background:#F87171;border-radius:3px"></span>Caídas del mes</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#FBBF24"></span>Acumulado (eje dcho.)</span>
+      </div>
+      <div class="ch" style="height:260px"><canvas id="ch-caidas" style="cursor:pointer"></canvas></div>
+      <div id="caidas-insight" class="chart-insight" style="margin-top:12px;display:none"></div>
     </div>
   `;
 
@@ -1175,6 +1298,183 @@ function renderGraficos(){
     options: baseOpts('s'),
     plugins: [ptLabelsPlugin(idxActual, _fmtSc)]
   });
+
+  // ── Gráfico de Caídas / Desistimientos ───────────────────
+  {
+    const result = buildCaidasMensualesData();
+    _caidasData = result;
+    const { meses, sinFecha, total } = result;
+    const keys = Object.keys(meses).sort();
+
+    const kpisEl = document.getElementById('caidas-kpis');
+    const insightEl = document.getElementById('caidas-insight');
+    const cardEl = document.getElementById('caidas-chart-card');
+
+    if (!keys.length) {
+      if (kpisEl) kpisEl.innerHTML = '';
+      if (cardEl) cardEl.innerHTML = '<div class="empty" style="padding:32px 20px">No hay desistimientos registrados con fecha de caída.</div>';
+    } else {
+      const labels = keys.map(k => {
+        const [y, m] = k.split('-');
+        return MESES[parseInt(m) - 1] + '-' + String(y).slice(-2);
+      });
+      const counts = keys.map(k => meses[k].count);
+      let acum = 0;
+      const acums = keys.map(k => { acum += meses[k].count; return acum; });
+
+      const ahora = new Date();
+      const mKeyAct = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+      const _dp2 = new Date(); _dp2.setMonth(_dp2.getMonth() - 1);
+      const mKeyPas = `${_dp2.getFullYear()}-${String(_dp2.getMonth() + 1).padStart(2, '0')}`;
+
+      const peorCount = Math.max(...counts);
+      const peorIdx = counts.indexOf(peorCount);
+      const peorLabel = labels[peorIdx] || '—';
+      const estesMes = meses[mKeyAct] ? meses[mKeyAct].count : 0;
+      const mesPas   = meses[mKeyPas] ? meses[mKeyPas].count : 0;
+      const tendDir  = estesMes < mesPas ? '↓ Mejorando' : estesMes > mesPas ? '↑ En aumento' : '→ Estable';
+      const tendCol  = estesMes < mesPas ? 'var(--verde)' : estesMes > mesPas ? 'var(--rojo)' : 'var(--text2)';
+      const anioAct  = ahora.getFullYear();
+      const totalAnio = Object.entries(meses)
+        .filter(([k]) => k.startsWith(String(anioAct)))
+        .reduce((a, [, v]) => a + v.count, 0);
+
+      if (kpisEl) kpisEl.innerHTML = `
+        <div class="kpi accent-rojo">
+          <div class="kpi-l">Total desistimientos</div>
+          <div class="kpi-v danger">${total}</div>
+          ${sinFecha > 0 ? `<div class="kpi-s">${sinFecha} sin fecha registrada</div>` : ''}
+        </div>
+        <div class="kpi accent-amber">
+          <div class="kpi-l">En ${anioAct}</div>
+          <div class="kpi-v warn">${totalAnio}</div>
+          <div class="kpi-s">del año en curso</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-l">Peor mes</div>
+          <div class="kpi-v danger">${peorCount}</div>
+          <div class="kpi-s">${peorLabel}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-l">Tendencia</div>
+          <div class="kpi-v" style="font-size:15px;color:${tendCol}">${tendDir}</div>
+          <div class="kpi-s">este mes ${estesMes} vs anterior ${mesPas}</div>
+        </div>
+      `;
+
+      const rojo  = isLight ? '#B91C1C' : '#F87171';
+      const amber = isLight ? '#B45309' : '#FBBF24';
+      const grid2 = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,.06)';
+      const tick2 = isLight ? '#9CA3AF' : '#606880';
+
+      chartsCreados['ch-caidas'] = new Chart(document.getElementById('ch-caidas'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Caídas del mes',
+              data: counts,
+              backgroundColor: keys.map(k =>
+                k === mKeyAct ? rojo : rojo + (isLight ? '99' : 'AA')
+              ),
+              borderColor: rojo,
+              borderWidth: 1.5,
+              borderRadius: 5,
+              order: 2,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Acumulado',
+              data: acums,
+              type: 'line',
+              borderColor: amber,
+              backgroundColor: 'transparent',
+              borderWidth: 2.5,
+              pointRadius: keys.map(k => k === mKeyAct ? 6 : 3),
+              pointBackgroundColor: amber,
+              pointBorderColor: isLight ? '#fff' : '#0A1410',
+              pointBorderWidth: 2,
+              tension: 0.35,
+              order: 1,
+              yAxisID: 'yAcum'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (evt, elements) => {
+            if (elements.length > 0) {
+              const idx = elements[0].index;
+              abrirModalCaidas(keys[idx], labels[idx]);
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: isLight ? 'rgba(255,255,255,0.97)' : 'rgba(12,14,20,0.95)',
+              borderColor:     isLight ? 'rgba(185,28,28,0.3)' : 'rgba(248,113,113,0.35)',
+              borderWidth: 1,
+              titleColor: isLight ? '#B91C1C' : '#F87171',
+              bodyColor:  isLight ? '#374151' : '#A0A8C0',
+              padding: 12,
+              callbacks: {
+                title: items => labels[items[0].dataIndex],
+                label: c => {
+                  if (c.datasetIndex === 0) {
+                    const k = keys[c.dataIndex];
+                    const proyectos = [...new Set(meses[k].items.map(i => i.proyecto))];
+                    return [
+                      ` Caídas: ${c.parsed.y}`,
+                      ` Proyectos: ${proyectos.join(', ')}`,
+                      ` ↩ Clic para ver detalle`
+                    ];
+                  }
+                  return ` Acumulado: ${c.parsed.y}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: tick2, font: { size: 10 }, autoSkip: true, maxRotation: 45 }
+            },
+            y: {
+              position: 'left',
+              beginAtZero: true,
+              grid: { color: grid2 },
+              title: { display: true, text: 'Caídas / mes', color: tick2, font: { size: 10 } },
+              ticks: {
+                color: tick2, font: { size: 10 }, stepSize: 1,
+                callback: v => Number.isInteger(v) ? v : null
+              }
+            },
+            yAcum: {
+              position: 'right',
+              beginAtZero: true,
+              grid: { display: false },
+              title: { display: true, text: 'Acumulado', color: amber, font: { size: 10 } },
+              ticks: {
+                color: amber, font: { size: 10 }, stepSize: 1,
+                callback: v => Number.isInteger(v) ? v : null
+              }
+            }
+          }
+        }
+      });
+
+      if (insightEl) {
+        insightEl.style.display = '';
+        insightEl.innerHTML =
+          `<strong>${total} desistimiento${total !== 1 ? 's' : ''} en total</strong>, ` +
+          `${totalAnio} en lo que va de ${anioAct}. ` +
+          `El mes con más caídas fue <strong>${peorLabel}</strong> con <strong>${peorCount}</strong>. ` +
+          (sinFecha > 0 ? `<span style="color:var(--amber)">⚠ ${sinFecha} sin "Fecha de Caída" registrada (se usa Mes/Año como referencia).</span>` : '');
+      }
+    }
+  }
 }
 
 // ════════════════════════════════════════════════════════════
