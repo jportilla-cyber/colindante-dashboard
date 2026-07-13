@@ -820,6 +820,62 @@ body.light .cron-hdr-badge { background: rgba(0,0,0,0.08); }
 /* Light banner adjustments */
 body.light .topbar { background: rgba(255,255,255,0.85); }
 body.light .ph-proj-card { background: var(--surface2); }
+
+/* ═══════════════ STOCK / FLOOR PLAN ═══════════════ */
+.stock-empty { padding: 80px 20px; text-align: center; }
+.stock-empty-icon { font-size: 48px; margin-bottom: 16px; opacity: .3; line-height: 1; }
+.stock-empty-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.stock-empty-sub { font-size: 13px; color: var(--text3); }
+
+.stock-legend {
+  display: flex; gap: 18px; flex-wrap: wrap; align-items: center;
+  padding: 10px 16px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 18px;
+}
+.stock-legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); font-weight: 500; }
+.stock-legend-swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--border2); flex-shrink: 0; }
+.stock-legend-hint { margin-left: auto; font-size: 11px; color: var(--text3); }
+
+.stock-plan { overflow-x: auto; }
+.stock-torres-grid { display: flex; gap: 32px; padding-bottom: 8px; }
+.stock-torre-wrap { min-width: max-content; }
+.stock-torre-name {
+  font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: .12em;
+  text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.stock-floor { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+.stock-floor-label {
+  width: 44px; flex-shrink: 0; text-align: right;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--text3);
+}
+.stock-units-row { display: flex; gap: 4px; }
+.stock-tile {
+  width: 66px; height: 52px; border-radius: var(--radius-sm); border: 1px solid var(--border2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: transform .12s ease, box-shadow .12s ease;
+  gap: 3px; flex-shrink: 0; user-select: none;
+}
+.stock-tile:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,.22); }
+.stock-tile-num { font-family: var(--font-mono); font-size: 12px; font-weight: 700; line-height: 1; }
+.stock-tile-area { font-size: 10px; opacity: .7; line-height: 1; }
+.tile-v { background: var(--verde-cl);  color: var(--verde); }
+.tile-s { background: var(--amber-cl);  color: var(--amber); }
+.tile-b { background: var(--rojo-cl);   color: var(--rojo); }
+.tile-d { background: var(--surface2);  color: var(--text3); }
+.tile-d:hover { border-color: var(--gold); color: var(--gold); }
+.stock-mini-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.stock-mini-tile {
+  width: 48px; height: 36px; border-radius: var(--radius-sm); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: transform .12s; font-family: var(--font-mono);
+  font-size: 10px; font-weight: 700; user-select: none;
+}
+.stock-mini-tile:hover { transform: translateY(-2px); }
+.stock-extras-label {
+  font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: .1em;
+  text-transform: uppercase; margin-bottom: 8px;
+}
 </style>
 </head>
 <body>
@@ -865,6 +921,10 @@ body.light .ph-proj-card { background: var(--surface2); }
       <button class="tab" data-page="cartera" onclick="mostrarPagina('cartera',this)">
         <span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
         Cartera
+      </button>
+      <button class="tab" data-page="stock" onclick="mostrarPagina('stock',this)">
+        <span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 2v20M15 2v20M4 8h16M4 14h16"/></svg></span>
+        Stock
       </button>
     </nav>
 
@@ -934,6 +994,9 @@ body.light .ph-proj-card { background: var(--surface2); }
     <section class="page" id="page-proyecciones">
       <div id="proyecciones-content"><div class="estado"><div class="estado-icon">◌</div><div class="estado-msg">Cargando…</div></div></div>
     </section>
+    <section class="page" id="page-stock">
+      <div id="stock-content"><div class="estado"><div class="estado-icon">◌</div><div class="estado-msg">Cargando…</div></div></div>
+    </section>
   </main>
 </div>
 
@@ -967,7 +1030,18 @@ body.light .ph-proj-card { background: var(--surface2); }
   </div>
 </div>
 
+<div class="modal-bg" id="modal-stock" onclick="cerrarModalStock(event)">
+  <div class="modal-content" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-stock-title"></div>
+      <button class="modal-close" onclick="cerrarModalStock(event)">×</button>
+    </div>
+    <div class="modal-body" id="modal-stock-body"></div>
+  </div>
+</div>
+
 <script src="dashboard-core.js"></script>
 <script src="variant-enhancements.js"></script>
 </body>
 </html>
+
