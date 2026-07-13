@@ -49,6 +49,7 @@ let filCuota = '';
 let filTipoCredito = '';
 let chartsCreados = {};
 let _caidasData = null;
+let _stockDetalle = {};
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
 
 // ── Utilidades ───────────────────────────────────────────────
@@ -201,6 +202,7 @@ function aplicarFiltros(){
   renderCartera();
   renderProyecciones();
   renderPreventa();
+  renderStock();
 }
 
 function setCuotaFiltro(valor, btn){
@@ -2723,6 +2725,251 @@ function getEstadoPreventa(unidad) {
 function cerrarModalPreventa(event) {
   if(event.target.id === 'modal-preventa' || event.target.classList.contains('modal-close')) {
     document.getElementById('modal-preventa').classList.remove('visible');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// STOCK — distribución de unidades por piso (tipo Evolta)
+// ════════════════════════════════════════════════════════════
+function renderStock() {
+  const fp = document.getElementById('fil-proyecto').value;
+  const el = document.getElementById('stock-content');
+  if (!el) return;
+
+  if (!fp) {
+    el.innerHTML = `
+      <div class="stock-empty">
+        <div class="stock-empty-icon">🏢</div>
+        <div class="stock-empty-title">Selecciona un proyecto para mostrar el stock</div>
+        <div class="stock-empty-sub">Usa el filtro de proyecto del panel superior para ver la distribución de unidades por piso</div>
+      </div>`;
+    return;
+  }
+
+  _stockDetalle = {};
+  let _stockIdx = 0;
+
+  const allUnits = rawMC.filter(r => str(r['PROYECTO']) === fp);
+  const dptos = allUnits.filter(r => str(r['INMUEBLE']) === 'Departamento');
+  const ests  = allUnits.filter(r => str(r['INMUEBLE']) === 'Estacionamiento');
+  const deps  = allUnits.filter(r => {
+    const t = str(r['INMUEBLE']).toLowerCase();
+    return t === 'deposito' || t === 'depósito';
+  });
+
+  function getPiso(r) {
+    for (const col of ['PISO', 'Piso', 'piso']) {
+      const v = num(r[col]);
+      if (v > 0) return v;
+    }
+    const digits = str(r['DPTO']).replace(/\D/g, '');
+    if (!digits) return 1;
+    const n = parseInt(digits);
+    return n >= 100 ? Math.floor(n / 100) : 1;
+  }
+
+  function floorLabel(p) {
+    if (p <= 0) return 'SS';
+    return 'P' + p;
+  }
+
+  const tileClass = {
+    'VENDIDO':   'tile-v', 'SEPARADO':  'tile-s',
+    'BLOQUEADO': 'tile-b', 'POR VENDER':'tile-d'
+  };
+
+  // KPIs
+  const total = dptos.length;
+  const v = dptos.filter(r => str(r['SITUACION']) === 'VENDIDO').length;
+  const s = dptos.filter(r => str(r['SITUACION']) === 'SEPARADO').length;
+  const b = dptos.filter(r => str(r['SITUACION']) === 'BLOQUEADO').length;
+  const d = total - v - s - b;
+  const pct = total > 0 ? (v / total * 100).toFixed(1) : '—';
+
+  // Group dptos by torre → piso
+  const byTorre = {};
+  dptos.forEach(r => {
+    const torre   = str(r['TORRE']) || '';
+    const piso    = getPiso(r);
+    const dptoId  = str(r['DPTO']);
+    const idx     = _stockIdx++;
+    _stockDetalle[idx] = r;
+    if (!byTorre[torre]) byTorre[torre] = {};
+    if (!byTorre[torre][piso]) byTorre[torre][piso] = [];
+    byTorre[torre][piso].push({ r, idx, dptoId });
+  });
+
+  ests.forEach(r => { _stockDetalle[_stockIdx++] = r; });
+  deps.forEach(r => { _stockDetalle[_stockIdx++] = r; });
+
+  const torreNames = Object.keys(byTorre).sort();
+  const multiTorre = torreNames.some(t => t !== '');
+
+  function buildFloorPlan(torreName) {
+    const pisoMap = byTorre[torreName] || {};
+    const pisos   = Object.keys(pisoMap).map(Number).sort((a, b) => b - a);
+
+    const floorsHtml = pisos.map(p => {
+      const units = [...pisoMap[p]].sort((a, b) => {
+        const na = parseInt(a.dptoId.replace(/\D/g, '') || '0');
+        const nb = parseInt(b.dptoId.replace(/\D/g, '') || '0');
+        return na - nb;
+      });
+      const tilesHtml = units.map(({ r, idx, dptoId }) => {
+        const sit     = str(r['SITUACION']);
+        const cls     = tileClass[sit] || 'tile-d';
+        const areaV   = num(r['Area  Ocupada']);
+        const cliente = str(r['Nombre del Cliente']);
+        const tip     = (cliente ? dptoId + ' — ' + cliente : dptoId).replace(/"/g, '');
+        return `<div class="stock-tile ${cls}" onclick="mostrarDetalleStock(${idx})" title="${tip}">
+          <div class="stock-tile-num">${dptoId}</div>
+          ${areaV > 0 ? `<div class="stock-tile-area">${Math.round(areaV)}m²</div>` : ''}
+        </div>`;
+      }).join('');
+
+      return `<div class="stock-floor">
+        <div class="stock-floor-label">${floorLabel(p)}</div>
+        <div class="stock-units-row">${tilesHtml}</div>
+      </div>`;
+    }).join('');
+
+    const header = torreName
+      ? `<div class="stock-torre-name">Torre ${torreName}</div>`
+      : '';
+    return `<div class="stock-torre-wrap">${header}${floorsHtml}</div>`;
+  }
+
+  let planHtml;
+  if (!multiTorre) {
+    planHtml = `<div class="stock-plan">${buildFloorPlan(torreNames[0] || '')}</div>`;
+  } else {
+    planHtml = `<div class="stock-plan"><div class="stock-torres-grid">${torreNames.map(t => buildFloorPlan(t)).join('')}</div></div>`;
+  }
+
+  // Estacionamientos y depósitos (mini tiles, reutilizamos índices ya asignados)
+  const estStartIdx = total;
+  const depStartIdx = estStartIdx + ests.length;
+  let extrasHtml = '';
+  if (ests.length > 0 || deps.length > 0) {
+    extrasHtml += `<div class="sec-label" style="margin-top:24px">Unidades complementarias</div>`;
+    if (ests.length > 0) {
+      const tiles = ests.map((r, i) => {
+        const idx = estStartIdx + i;
+        const sit = str(r['SITUACION']);
+        const cls = tileClass[sit] || 'tile-d';
+        const n   = str(r['EST']);
+        return `<div class="stock-mini-tile ${cls}" onclick="mostrarDetalleStock(${idx})" title="${n}">${n}</div>`;
+      }).join('');
+      extrasHtml += `<div style="margin-bottom:14px"><div class="stock-extras-label">Estacionamientos &middot; ${ests.length}</div><div class="stock-mini-row">${tiles}</div></div>`;
+    }
+    if (deps.length > 0) {
+      const tiles = deps.map((r, i) => {
+        const idx = depStartIdx + i;
+        const sit = str(r['SITUACION']);
+        const cls = tileClass[sit] || 'tile-d';
+        const n   = str(r['DEP']);
+        return `<div class="stock-mini-tile ${cls}" onclick="mostrarDetalleStock(${idx})" title="${n}">${n}</div>`;
+      }).join('');
+      extrasHtml += `<div><div class="stock-extras-label">Depósitos &middot; ${deps.length}</div><div class="stock-mini-row">${tiles}</div></div>`;
+    }
+  }
+
+  el.innerHTML = `
+    <div class="sec-label">Stock · ${fp}</div>
+    <div class="kpi-grid" style="margin-bottom:14px">
+      <div class="kpi accent-verde"><div class="kpi-l">Vendidos</div><div class="kpi-v ok">${v}</div><div class="kpi-s">de ${total} dptos</div></div>
+      <div class="kpi accent-amber"><div class="kpi-l">Separados</div><div class="kpi-v warn">${s}</div></div>
+      <div class="kpi accent-rojo"><div class="kpi-l">Bloqueados</div><div class="kpi-v danger">${b}</div></div>
+      <div class="kpi"><div class="kpi-l">Disponibles</div><div class="kpi-v">${d}</div></div>
+      <div class="kpi accent-gold"><div class="kpi-l">% Vendido</div><div class="kpi-v" style="color:var(--gold)">${pct}%</div></div>
+    </div>
+    <div class="stock-legend">
+      <span class="stock-legend-item"><span class="stock-legend-swatch tile-v"></span>Vendido (${v})</span>
+      <span class="stock-legend-item"><span class="stock-legend-swatch tile-s"></span>Separado (${s})</span>
+      <span class="stock-legend-item"><span class="stock-legend-swatch tile-b"></span>Bloqueado (${b})</span>
+      <span class="stock-legend-item"><span class="stock-legend-swatch tile-d"></span>Disponible (${d})</span>
+      <span class="stock-legend-hint">Pisos: mayor → menor &middot; Clic en unidad para ver detalle</span>
+    </div>
+    ${planHtml}
+    ${extrasHtml}
+  `;
+}
+
+function mostrarDetalleStock(idx) {
+  const r = _stockDetalle[idx];
+  if (!r) return;
+
+  const sit      = str(r['SITUACION']);
+  const inmueble = str(r['INMUEBLE']);
+  const isEst    = inmueble === 'Estacionamiento';
+  const isDep    = inmueble.toLowerCase().includes('dep');
+  const unitNum  = str(r['DPTO']) || str(r['EST']) || str(r['DEP']);
+  const cliente  = str(r['Nombre del Cliente']);
+  const areaV        = num(r['Area  Ocupada']);
+  const isPrecioLista= sit === 'POR VENDER' || sit === 'BLOQUEADO';
+  const valor        = isPrecioLista ? num(r['Presupuestado S/']) : num(r['VALOR S/']);
+  const valorLabel   = isPrecioLista ? 'Presupuestado' : 'Precio';
+  const ingresos     = num(r['Ingresos  S/.']);
+  const porCobrar= num(r['Por Pagar  S/.']);
+  const tipo     = str(r['Tipo de  Credito']);
+  const vendedor = str(r['VENDEDOR']);
+  const torre    = str(r['TORRE']);
+  const pisoCol  = num(r['PISO']) || num(r['Piso']);
+  const carta    = str(r['CARTA APROB.']);
+  const mes = num(r['MES DE VENTA']), anio = num(r['AÑO DE VENTA']);
+  const fechaVenta = (mes >= 1 && mes <= 12 && anio > 2000) ? MESES[mes - 1] + ' ' + anio : null;
+
+  const sitColors = { 'VENDIDO':'var(--verde)', 'SEPARADO':'var(--amber)', 'BLOQUEADO':'var(--rojo)', 'POR VENDER':'var(--text3)' };
+  const sitBgs    = { 'VENDIDO':'var(--verde-cl)', 'SEPARADO':'var(--amber-cl)', 'BLOQUEADO':'var(--rojo-cl)', 'POR VENDER':'var(--surface2)' };
+  const sitLabels = { 'VENDIDO':'Vendido', 'SEPARADO':'Separado', 'BLOQUEADO':'Bloqueado', 'POR VENDER':'Disponible' };
+  const sitColor  = sitColors[sit] || 'var(--text2)';
+  const sitBg     = sitBgs[sit]    || 'var(--surface2)';
+  const sitLabel  = sitLabels[sit] || sit;
+  const unitPrefix= isEst ? 'Estac.' : isDep ? 'Dep.' : 'Dpto';
+
+  document.getElementById('modal-stock-title').textContent =
+    `${unitPrefix} ${unitNum}${torre ? ' · Torre ' + torre : ''}`;
+
+  const kpis = [];
+  if (areaV > 0)      kpis.push(`<div class="ck"><div class="ck-l">Área</div><div class="ck-v">${areaV.toFixed(2)} m²</div></div>`);
+  if (valor > 0)      kpis.push(`<div class="ck"><div class="ck-l">${valorLabel}</div><div class="ck-v">${fmt(valor)}</div></div>`);
+  if (ingresos > 0)   kpis.push(`<div class="ck"><div class="ck-l">Cobrado</div><div class="ck-v ok">${fmt(ingresos)}</div></div>`);
+  if (porCobrar > 0)  kpis.push(`<div class="ck"><div class="ck-l">Por cobrar</div><div class="ck-v warn">${fmt(porCobrar)}</div></div>`);
+
+  const detalles = [];
+  if (tipo)        detalles.push([tipo, null, 'Tipo crédito']);
+  if (fechaVenta)  detalles.push([fechaVenta, null, 'Fecha venta']);
+  if (vendedor)    detalles.push([vendedor, null, 'Vendedor']);
+  if (pisoCol > 0) detalles.push(['Piso ' + pisoCol, null, 'Piso']);
+  if (sit !== 'POR VENDER') {
+    const cartaOk = carta.toLowerCase() === 'si';
+    detalles.push([carta || 'Pendiente', cartaOk ? 'var(--verde)' : null, 'Carta aprob.']);
+  }
+
+  document.getElementById('modal-stock-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:${sitBg};border-radius:var(--radius);border:1px solid var(--border2);margin-bottom:16px">
+      <div style="width:9px;height:9px;border-radius:3px;background:${sitColor};flex-shrink:0"></div>
+      <div style="font-size:14px;font-weight:700;color:${sitColor}">${sitLabel}</div>
+      ${cliente
+        ? `<div style="margin-left:auto;font-size:13px;font-weight:600;color:var(--text);text-align:right;line-height:1.3">${cliente}</div>`
+        : '<div style="margin-left:auto;font-size:11px;color:var(--text3)">Sin asignar</div>'}
+    </div>
+    ${kpis.length ? `<div class="cliente-kpis" style="margin-bottom:14px">${kpis.join('')}</div>` : ''}
+    ${detalles.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px">
+      ${detalles.map(([val, color, lbl]) => `
+        <div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">${lbl}</div>
+          <div style="font-size:13px;font-weight:600;color:${color || 'var(--text)'}">${val}</div>
+        </div>`).join('')}
+    </div>` : ''}
+  `;
+
+  document.getElementById('modal-stock').classList.add('visible');
+}
+
+function cerrarModalStock(event) {
+  if (!event || event.target.id === 'modal-stock' || event.target.classList.contains('modal-close')) {
+    document.getElementById('modal-stock').classList.remove('visible');
   }
 }
 
