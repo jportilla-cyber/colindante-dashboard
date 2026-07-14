@@ -2159,6 +2159,7 @@ function renderCartera(){
         proyecto: str(r['PROYECTO']),
         situacion: str(r['SITUACION']),
         vendedor: str(r['VENDEDOR']),
+        tiposCredito: new Set(),
         dptos: new Set(),
         ests: new Set(),
         deps: new Set(),
@@ -2172,6 +2173,7 @@ function renderCartera(){
     if(str(r['DPTO'])) clientes[nombre].dptos.add(str(r['DPTO']));
     if(str(r['EST'])) clientes[nombre].ests.add(str(r['EST']));
     if(str(r['DEP'])) clientes[nombre].deps.add(str(r['DEP']));
+    if(str(r['Tipo de  Credito'])) clientes[nombre].tiposCredito.add(str(r['Tipo de  Credito']));
 
     clientes[nombre].valor += num(r['VALOR S/']);
     clientes[nombre].ingresos += num(r['Ingresos  S/.']);
@@ -2226,6 +2228,7 @@ function renderCartera(){
           ${pillHtml(c.situacion)}
           <span style="font-size:11px;color:var(--gris-text)">${c.proyecto}</span>
           ${formatearUnidades(c) ? `<span style="font-size:11px;color:var(--gris-text)">${formatearUnidades(c)}</span>` : ''}
+          ${c.tiposCredito.size ? `<span style="font-size:11px;font-weight:600;color:var(--accent)">${[...c.tiposCredito].join(' / ')}</span>` : ''}
           ${c.vendedor ? `<span style="font-size:11px;color:var(--gris-text)">${c.vendedor}</span>` : ''}
         </div>
         <div class="cliente-kpis">
