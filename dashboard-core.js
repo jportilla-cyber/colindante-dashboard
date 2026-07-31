@@ -2768,11 +2768,14 @@ function renderStock() {
     const digits = str(r['DPTO']).replace(/\D/g, '');
     if (!digits) return 1;
     const n = parseInt(digits);
-    return n >= 100 ? Math.floor(n / 100) : 1;
+    if (n >= 100) return Math.floor(n / 100);
+    if (n >= 10)  return Math.floor(n / 10);
+    return 0; // 1-9 → piso S0
   }
 
   function floorLabel(p) {
-    if (p <= 0) return 'SS';
+    if (p === 0) return 'S0';
+    if (p < 0)   return 'S' + Math.abs(p);
     return 'P' + p;
   }
 
