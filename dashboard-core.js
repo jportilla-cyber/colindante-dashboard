@@ -2472,8 +2472,13 @@ function renderProyecciones(){
 // ════════════════════════════════════════════════════════════
 function renderPreventa() {
   const fp = document.getElementById('fil-proyecto').value;
-  const proyectos = [...new Set(rawMC.map(r => str(r['PROYECTO'])).filter(Boolean))].sort();
-  const listaProyectos = fp ? [fp] : proyectos;
+  const proyectos = [...new Set(rawMC.map(r => str(r['PROYECTO'])).filter(Boolean))].sort()
+    .filter(p => {
+      const meta = rawPrevMeta.find(m => str(m['PROYECTO']) === p);
+      if (!meta) return true; // sin fila en Preventa_Meta → se muestra
+      return str(meta['ACTIVO']).toLowerCase() !== 'si';
+    });
+  const listaProyectos = fp ? (proyectos.includes(fp) ? [fp] : []) : proyectos;
 
   let html = `
     <div class="sec-label">Avance de Preventa por Proyecto</div>
@@ -2574,6 +2579,7 @@ function renderPreventa() {
   const allStates = [
     'Válido',
     'Pend. Carta de Aprobación',
+    'Ahorro Casa iniciado',
     'Pend. Cuota Inicial',
     'Pend. Cuota Inicial + CA',
     'Proyección'
@@ -2634,7 +2640,70 @@ function renderPreventa() {
     </div>
   `;
 
-  html += summaryTableHtml; // Append to the existing HTML for the preventa page
+  html += summaryTableHtml;
+
+  // ── Cartas de Aprobación por vencer en los próximos 20 días ──
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const en20 = new Date(hoy); en20.setDate(hoy.getDate() + 20);
+
+  const cartasPorVencer = rawMC.filter(r => {
+    if (str(r['CARTA APROB.']).toLowerCase() !== 'si') return false;
+    const fechaVenc = parseFechaExcel(r['FECHA DE VENCIMIENTO C.A.']);
+    if (!fechaVenc) return false;
+    fechaVenc.setHours(0,0,0,0);
+    return fechaVenc >= hoy && fechaVenc <= en20;
+  }).sort((a, b) => {
+    const fa = parseFechaExcel(a['FECHA DE VENCIMIENTO C.A.']);
+    const fb = parseFechaExcel(b['FECHA DE VENCIMIENTO C.A.']);
+    return (fa || 0) - (fb || 0);
+  });
+
+  if (cartasPorVencer.length > 0) {
+    html += `<div class="sec-label" style="margin-top:24px;color:var(--rojo)">⚠ Cartas de Aprobación por vencer (próximos 20 días)</div>
+    <div class="tbl-wrap"><div class="tbl-scroll"><table>
+      <thead><tr><th>Cliente</th><th>Proyecto</th><th>Dpto</th><th>Tipo Crédito</th><th>Fecha Emisión</th><th style="color:var(--rojo)">Fecha Vencimiento</th><th>Días restantes</th></tr></thead>
+      <tbody>`;
+    cartasPorVencer.forEach(r => {
+      const fechaVenc = parseFechaExcel(r['FECHA DE VENCIMIENTO C.A.']);
+      const fechaEm   = parseFechaExcel(r['FECHA EMISION C.A.']);
+      const dias      = fechaVenc ? Math.ceil((fechaVenc - hoy) / 86400000) : '—';
+      const diasColor = dias <= 5 ? 'var(--rojo)' : dias <= 10 ? 'var(--amber)' : 'var(--text2)';
+      const fmtDate   = d => d ? d.toLocaleDateString('es-PE', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+      html += `<tr>
+        <td>${str(r['Nombre del Cliente'])}</td>
+        <td>${str(r['PROYECTO'])}</td>
+        <td>${str(r['DPTO'])}</td>
+        <td>${str(r['Tipo de  Credito'])}</td>
+        <td>${fmtDate(fechaEm)}</td>
+        <td style="font-weight:700;color:var(--rojo)">${fmtDate(fechaVenc)}</td>
+        <td style="font-weight:700;color:${diasColor};text-align:center">${dias} día${dias === 1 ? '' : 's'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+
+  // ── Ahorro Casa en proceso ──
+  const ahorroCasa = rawMC.filter(r => str(r['CARTA APROB.']).toLowerCase() === 'ahorro');
+
+  if (ahorroCasa.length > 0) {
+    html += `<div class="sec-label" style="margin-top:24px;color:var(--accent)">Ahorro Casa en proceso (sin Carta de Aprobación aún)</div>
+    <div class="tbl-wrap"><div class="tbl-scroll"><table>
+      <thead><tr><th>Cliente</th><th>Proyecto</th><th>Dpto</th><th>Tipo Crédito</th><th>Valor S/</th><th>Pagado</th></tr></thead>
+      <tbody>`;
+    ahorroCasa.forEach(r => {
+      html += `<tr>
+        <td>${str(r['Nombre del Cliente'])}</td>
+        <td>${str(r['PROYECTO'])}</td>
+        <td>${str(r['DPTO'])}</td>
+        <td>${str(r['Tipo de  Credito'])}</td>
+        <td style="text-align:right">${fmt(num(r['VALOR S/']))}</td>
+        <td style="text-align:right">${fmt(num(r['Ingresos  S/.']))}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+
   document.getElementById('preventa-content').innerHTML = html;
 }
 
@@ -2673,13 +2742,15 @@ function mostrarDetallePreventa(proyecto) {
   } else {
     unidades.forEach(u => {
       const { status, color } = getEstadoPreventa(u);
+      const cartaVal = str(u['CARTA APROB.']).toLowerCase();
+      const cartaDisplay = cartaVal === 'si' ? 'Sí' : cartaVal === 'ahorro' ? 'Ahorro Casa' : 'No Req.';
       bodyHtml += `
         <tr>
           <td>${str(u['Nombre del Cliente'])}<br><small style="color:var(--text3)">Dpto ${str(u['DPTO'])}</small></td>
           <td style="text-align:right">${fmt(num(u['VALOR S/']))}</td>
           <td style="text-align:right">${fmt(num(u['Ingresos  S/.']))}</td>
           <td>${str(u['Tipo de  Credito'])}</td>
-          <td>${str(u['CARTA APROB.']) || 'No Req.'}</td>
+          <td>${cartaDisplay}</td>
           <td style="font-weight:600; color:${color}">${status}</td>
         </tr>
       `;
@@ -2696,7 +2767,9 @@ function getEstadoPreventa(unidad) {
   const valorUnidad = num(unidad['VALOR S/']);
   const ingresos = num(unidad['Ingresos  S/.']);
   const pctPagado = valorUnidad > 0 ? (ingresos / valorUnidad) * 100 : 0;
-  const tieneCarta = str(unidad['CARTA APROB.']).toLowerCase() === 'si';
+  const cartaAprob = str(unidad['CARTA APROB.']).toLowerCase();
+  const tieneCarta = cartaAprob === 'si';
+  const tieneAhorro = cartaAprob === 'ahorro';
 
   let faltaCI = false, faltaCA = false;
 
@@ -2706,23 +2779,25 @@ function getEstadoPreventa(unidad) {
     if (pctPagado < 10) faltaCI = true;
     if (!tieneCarta) faltaCA = true;
   } else if (tipoCredito.includes('contado')) {
-    // Contado siempre es válido si está vendido/separado
     return { status: 'Válido', color: 'var(--verde)', sortOrder: 1 };
   }
 
   if (!faltaCI && !faltaCA) {
     return { status: 'Válido', color: 'var(--verde)', sortOrder: 1 };
   }
+  if (faltaCA && tieneAhorro) {
+    return { status: 'Ahorro Casa iniciado', color: 'var(--accent)', sortOrder: 3 };
+  }
   if (faltaCI && faltaCA) {
-    return { status: 'Pend. Cuota Inicial + CA', color: 'var(--rojo)', sortOrder: 4 };
+    return { status: 'Pend. Cuota Inicial + CA', color: 'var(--rojo)', sortOrder: 5 };
   }
   if (faltaCI) {
-    return { status: 'Pend. Cuota Inicial', color: 'var(--amber)', sortOrder: 3 };
+    return { status: 'Pend. Cuota Inicial', color: 'var(--amber)', sortOrder: 4 };
   }
   if (faltaCA) {
     return { status: 'Pend. Carta de Aprobación', color: 'var(--amber)', sortOrder: 2 };
   }
-  return { status: 'Proyección', color: 'var(--text3)', sortOrder: 5 }; // Fallback
+  return { status: 'Proyección', color: 'var(--text3)', sortOrder: 6 };
 }
 
 function cerrarModalPreventa(event) {
@@ -2948,8 +3023,10 @@ function mostrarDetalleStock(idx) {
   if (vendedor)    detalles.push([vendedor, null, 'Vendedor']);
   if (pisoCol > 0) detalles.push(['Piso ' + pisoCol, null, 'Piso']);
   if (sit !== 'POR VENDER') {
-    const cartaOk = carta.toLowerCase() === 'si';
-    detalles.push([carta || 'Pendiente', cartaOk ? 'var(--verde)' : null, 'Carta aprob.']);
+    const cartaLow = carta.toLowerCase();
+    const cartaLabel = cartaLow === 'si' ? 'Sí' : cartaLow === 'ahorro' ? 'Ahorro Casa' : 'Pendiente';
+    const cartaColor = cartaLow === 'si' ? 'var(--verde)' : cartaLow === 'ahorro' ? 'var(--accent)' : null;
+    detalles.push([cartaLabel, cartaColor, 'Carta aprob.']);
   }
 
   document.getElementById('modal-stock-body').innerHTML = `
