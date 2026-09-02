@@ -105,26 +105,20 @@ async function fetchSheet(sheetName){
   try {
     const res = await fetch(url);
     const text = await res.text();
-    
-    // Verificar si es una respuesta válida
     if (!text.includes('google.visualization.Query.setResponse')) {
       console.error(`❌ Hoja "${sheetName}" no encontrada o Sheet no es público. Respuesta:`, text.substring(0, 200));
       return [];
     }
-    
     const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
-    
     if(!json.table||!json.table.rows) {
       console.warn(`⚠️ La hoja "${sheetName}" está vacía`);
       return [];
     }
-    
     const cols = json.table.cols.map(c=>c.label||'');
     console.log(`✅ Hoja "${sheetName}": ${json.table.rows.length} filas, columnas: ${cols.join(', ')}`);
-    
     return json.table.rows.map(r=>{
       const obj={};
-      r.c.forEach((cell,i)=>{ obj[cols[i]] = cell ? (cell.v!==null&&cell.v!==undefined ? cell.v : '') : ''; });
+      r.c.forEach((cell,i)=>{ obj[cols[i]] = cell ? (cell.v!==null&&cell.v!==undefined ? cell.v : (cell.f||'')) : ''; });
       return obj;
     });
   } catch(e) {
@@ -132,6 +126,7 @@ async function fetchSheet(sheetName){
     return [];
   }
 }
+
 
 // ── Cargar datos ─────────────────────────────────────────────
 async function cargarDatos(){
@@ -2826,6 +2821,7 @@ function renderStock() {
 
   _stockDetalle = {};
   let _stockIdx = 0;
+  _stockVistaActual = 'area';
 
   const allUnits = rawMC.filter(r => str(r['PROYECTO']) === fp);
   const dptos = allUnits.filter(r => str(r['INMUEBLE']) === 'Departamento');
@@ -2901,10 +2897,15 @@ function renderStock() {
         const cls     = tileClass[sit] || 'tile-d';
         const areaV   = num(r['Area  Ocupada']);
         const cliente = str(r['Nombre del Cliente']);
-        const tip     = (cliente ? dptoId + ' — ' + cliente : dptoId).replace(/"/g, '');
+        const isPrecioLista2 = sit === 'POR VENDER' || sit === 'BLOQUEADO';
+        const precioTile    = isPrecioLista2 ? num(r['Presupuestado S/']) : num(r['VALOR S/']);
+        const precioK       = precioTile >= 1e6 ? (precioTile/1e6).toFixed(1)+'M'
+                            : precioTile >= 1e3 ? Math.round(precioTile/1e3)+'K' : '';
+        const tip           = (cliente ? dptoId + ' — ' + cliente : dptoId).replace(/"/g, '');
         return `<div class="stock-tile ${cls}" onclick="mostrarDetalleStock(${idx})" title="${tip}">
           <div class="stock-tile-num">${dptoId}</div>
           ${areaV > 0 ? `<div class="stock-tile-area">${Math.round(areaV)}m²</div>` : ''}
+          ${precioK   ? `<div class="stock-tile-precio">${precioK}</div>` : ''}
         </div>`;
       }).join('');
 
@@ -2939,6 +2940,15 @@ function renderStock() {
         const sit = str(r['SITUACION']);
         const cls = tileClass[sit] || 'tile-d';
         const n   = str(r['EST']);
+        // Detectar estacionamiento doble: "7 y 8", "7-8", "7/8", "7,8"
+        const isDouble = /\d[\s]*[yY\-\/,][\s]*\d/.test(n);
+        if (isDouble) {
+          const nums = n.replace(/\s+y\s+/gi, ' · ').replace(/[-\/,]/g, ' · ');
+          return `<div class="stock-mini-tile stock-mini-tile-double ${cls}" onclick="mostrarDetalleStock(${idx})" title="Est. doble ${n}">
+            <span class="est-label">doble</span>
+            <span class="est-nums">${nums}</span>
+          </div>`;
+        }
         return `<div class="stock-mini-tile ${cls}" onclick="mostrarDetalleStock(${idx})" title="${n}">${n}</div>`;
       }).join('');
       extrasHtml += `<div style="margin-bottom:14px"><div class="stock-extras-label">Estacionamientos &middot; ${ests.length}</div><div class="stock-mini-row">${tiles}</div></div>`;
@@ -2970,9 +2980,14 @@ function renderStock() {
       <span class="stock-legend-item"><span class="stock-legend-swatch tile-b"></span>Bloqueado (${b})</span>
       <span class="stock-legend-item"><span class="stock-legend-swatch tile-d"></span>Disponible (${d})</span>
       <span class="stock-legend-hint">Pisos: mayor → menor &middot; Clic en unidad para ver detalle</span>
+      <button class="stock-toggle-btn" id="stock-toggle-btn" onclick="toggleStockVista()" title="Cambiar entre área y precio">
+        <span id="stock-toggle-label">Ver precio</span>
+      </button>
     </div>
+    <div id="stock-plan-wrap">
     ${planHtml}
     ${extrasHtml}
+    </div>
   `;
 }
 
@@ -3048,6 +3063,22 @@ function mostrarDetalleStock(idx) {
   `;
 
   document.getElementById('modal-stock').classList.add('visible');
+}
+
+let _stockVistaActual = 'area'; // 'area' | 'precio'
+function toggleStockVista() {
+  const wrap = document.getElementById('stock-plan-wrap');
+  const lbl  = document.getElementById('stock-toggle-label');
+  if (!wrap) return;
+  if (_stockVistaActual === 'area') {
+    _stockVistaActual = 'precio';
+    wrap.classList.add('stock-modo-precio');
+    if (lbl) lbl.textContent = 'Ver área';
+  } else {
+    _stockVistaActual = 'area';
+    wrap.classList.remove('stock-modo-precio');
+    if (lbl) lbl.textContent = 'Ver precio';
+  }
 }
 
 function cerrarModalStock(event) {
