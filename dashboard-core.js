@@ -1677,7 +1677,7 @@ function buildCuotasMensualesData() {
     if (estadoVenta === 'SEPARADO') {
       fechaEsperada.setDate(fechaEsperada.getDate() + 14);
     } else if (estadoVenta === 'VENDIDO') {
-      fechaEsperada.setDate(fechaEsperada.getDate() + 3);
+      fechaEsperada.setDate(fechaEsperada.getDate() + 0);
     }
 
     const mKey = `${fechaEsperada.getFullYear()}-${String(fechaEsperada.getMonth() + 1).padStart(2, '0')}`;
